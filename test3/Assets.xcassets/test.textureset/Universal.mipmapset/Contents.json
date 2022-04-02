@@ -1,0 +1,12 @@
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "levels" : [
+    {
+      "filename" : "laptop_keyboard_hand.jpg",
+      "mipmap-level" : "base"
+    }
+  ]
+}

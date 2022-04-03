@@ -1,21 +1,18 @@
 import MetalKit
-import AVFoundation
 
-class Renderer: NSObject {
+class RendererOld: NSObject {
   static var device: MTLDevice!
   static var commandQueue: MTLCommandQueue!
   static var library: MTLLibrary!
 
+//  var uniforms = Uniforms()
+//  var fragmentUniforms = FragmentUniforms()
+//
   let depthStencilState: MTLDepthStencilState
   var pipelineState: MTLRenderPipelineState!
   var renderables: [Renderable] = []
   
   static var aspect: Float = 1.0
-  
-  
-  var cameraTexture: MTLTexture? = nil
-  
-  var cameraTextureCache: CVMetalTextureCache?
 
 
   public convenience init(metalView: MTKView) {
@@ -41,8 +38,6 @@ class Renderer: NSObject {
     metalView.delegate = self
     
     
-    initForMetalCapture()
-    
 //    renderables.append(Sphere())
 //    renderables.append(Triangle())
     renderables.append(ImageMean())
@@ -61,11 +56,11 @@ class Renderer: NSObject {
     let descriptor = MTLDepthStencilDescriptor()
     descriptor.depthCompareFunction = .less
     descriptor.isDepthWriteEnabled = true
-    return Renderer.device.makeDepthStencilState(descriptor: descriptor)
+    return Self.device.makeDepthStencilState(descriptor: descriptor)
   }
 }
 
-extension Renderer: MTKViewDelegate {
+extension RendererOld: MTKViewDelegate {
   func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
     Self.aspect = Float(view.bounds.width)/Float(view.bounds.height)
   }
@@ -73,7 +68,7 @@ extension Renderer: MTKViewDelegate {
   func draw(in view: MTKView) {
     guard
       let descriptor = view.currentRenderPassDescriptor,
-      let commandBuffer = Renderer.commandQueue.makeCommandBuffer(),
+      let commandBuffer = Self.commandQueue.makeCommandBuffer(),
       let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
         return
     }
@@ -81,10 +76,6 @@ extension Renderer: MTKViewDelegate {
     renderEncoder.setDepthStencilState(depthStencilState)
     
     for renderable in renderables {
-      if cameraTexture != nil,
-         let imageMean = renderable as? ImageMean {
-        imageMean.texture = cameraTexture
-      }
       renderable.draw(renderEncoder: renderEncoder)
     }
 
@@ -94,53 +85,5 @@ extension Renderer: MTKViewDelegate {
     }
     commandBuffer.present(drawable)
     commandBuffer.commit()
-  }
-}
-
-
-extension Renderer: AVCaptureVideoDataOutputSampleBufferDelegate {
-  func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-      print("Buffer dropped")
-  }
-  
-  func initForMetalCapture() {
-    guard CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, Self.device, nil, &cameraTextureCache) == kCVReturnSuccess else {
-      fatalError("Could not create texture cache")
-    }
-  }
-  
-  func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-    print("Buffer outputted")
-    guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-      fatalError("Conversion from CMSampleBuffer to CVImageBuffer failed"
-      )
-    }
-    let width = CVPixelBufferGetWidth(imageBuffer)
-    let height = CVPixelBufferGetHeight(imageBuffer)
-    
-    
-    var imageTexture: CVMetalTexture?
-    let result = CVMetalTextureCacheCreateTextureFromImage(
-      kCFAllocatorDefault,
-      cameraTextureCache!,
-      imageBuffer,
-      nil,
-      .bgra8Unorm,
-      width,
-      height,
-      0,
-      &imageTexture
-    )
-
-    guard
-      let unwrappedImageTexture = imageTexture,
-      let texture = CVMetalTextureGetTexture(unwrappedImageTexture),
-      result == kCVReturnSuccess
-    else {
-      fatalError("Failed to get camera MTLTexture")
-    }
-    
-    self.cameraTexture = texture
-    
   }
 }

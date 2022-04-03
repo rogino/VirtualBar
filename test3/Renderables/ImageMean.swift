@@ -2,8 +2,8 @@ import MetalKit
 import MetalPerformanceShaders
 
 public class ImageMean: Renderable {
-  let texture: MTLTexture!
-  let computedTexture: MTLTexture!
+  public var texture: MTLTexture!
+  var computedTexture: MTLTexture!
   
   let rectMesh: MTKMesh!
   let pipelineState: MTLRenderPipelineState
@@ -21,13 +21,12 @@ public class ImageMean: Renderable {
       )
     } catch let error { fatalError(error.localizedDescription) }
 
-    computedTexture = Self.runMPS(texture: texture)
+//    computedTexture = Self.runMPS(texture: texture)
     
     let (mdlMesh, mtkMesh) = Self.genRectMesh()
     self.rectMesh = mtkMesh
     pipelineState = Self.makePipeline(mdlMesh: mdlMesh)
   }
-  
   
   static func runMPS(texture: MTLTexture) -> MTLTexture {
     let descriptor = MTLTextureDescriptor.texture2DDescriptor(
@@ -124,6 +123,7 @@ public class ImageMean: Renderable {
   
   
   public func draw(renderEncoder: MTLRenderCommandEncoder) {
+    computedTexture = Self.runMPS(texture: texture)
     renderEncoder.setRenderPipelineState(pipelineState)
     
     renderEncoder.setTriangleFillMode(.fill)
@@ -133,7 +133,7 @@ public class ImageMean: Renderable {
     
     threshold = (threshold + 0.001).truncatingRemainder(dividingBy: 1)
     var bla = threshold.truncatingRemainder(dividingBy: 0.2) + 0.25
-    print(bla)
+//    print(bla)
     renderEncoder.setFragmentBytes(&bla, length: MemoryLayout<Float>.stride, index: 3)
     
     let submesh = rectMesh.submeshes.first!

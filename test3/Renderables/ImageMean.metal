@@ -19,7 +19,7 @@ vertex VertexOutImageMean vertex_image_mean(
     .position = float4(vertex_in.position, 1),
     .texturePosition =  float2(
      (vertex_in.position.x + 1) / 2,
-     (vertex_in.position.y + 1) / 2
+     (1 - vertex_in.position.y) / 2
     )
   };
 }
@@ -33,6 +33,7 @@ fragment float4 fragment_image_mean(
   constexpr sampler textureSampler;
   float4 original = originalTexture.sample(textureSampler, in.texturePosition);
   float4 computed = computedTexture.sample(textureSampler, float2(0, in.texturePosition[1]));
+  if (in.texturePosition[0] < 0.1) return computed;
   if (computed[0] + computed[1] + computed[2] + computed[3] > threshold * 4) return float4(1);
   float4 color = original;
   return color;

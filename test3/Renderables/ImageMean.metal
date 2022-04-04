@@ -2,9 +2,6 @@
 using namespace metal;
 #import "./../Common.h"
 
-struct VertexInImageMean {
-  float3 position [[ attribute(0) ]];
-};
 
 struct VertexOutImageMean {
   float4 position [[ position ]];
@@ -13,14 +10,13 @@ struct VertexOutImageMean {
 };
 
 vertex VertexOutImageMean vertex_image_mean(
-  const VertexInImageMean vertex_in [[ stage_in ]]
+  constant float2 *vertices           [[buffer(0)]],
+  constant float2 *textureCoordinates [[buffer(1)]],
+            uint id                   [[vertex_id]]
 ) {
   return {
-    .position = float4(vertex_in.position, 1),
-    .texturePosition =  float2(
-     (vertex_in.position.x + 1) / 2,
-     (1 - vertex_in.position.y) / 2
-    )
+    .position = float4(vertices[id], 0, 1),
+    .texturePosition =  textureCoordinates[id]
   };
 }
 
@@ -33,7 +29,7 @@ fragment float4 fragment_image_mean(
   constexpr sampler textureSampler;
   float4 original = originalTexture.sample(textureSampler, in.texturePosition);
   float4 computed = computedTexture.sample(textureSampler, float2(0, in.texturePosition[1]));
-  if (in.texturePosition[0] < 0.1) return computed;
+  if (in.texturePosition[0] < 0.1) return computed * 10;
   if (computed[0] + computed[1] + computed[2] + computed[3] > threshold * 4) return float4(1);
   float4 color = original;
   return color;

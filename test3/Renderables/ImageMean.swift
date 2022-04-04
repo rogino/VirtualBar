@@ -5,11 +5,30 @@ public class ImageMean: Renderable {
   public var texture: MTLTexture!
   var computedTexture: MTLTexture!
   
-  let rectMesh: MTKMesh!
   let pipelineState: MTLRenderPipelineState
   
   var threshold: Float = 0
   
+  var vertices: [Float] = [
+    -1.0,  1.0,
+     1.0, -1.0,
+    -1.0, -1.0,
+     
+    -1.0,  1.0,
+     1.0,  1.0,
+     1.0, -1.0
+  ]
+
+  var textureCoordinates: [Float] = [
+    0.0, 0.0,
+    1.0, 1.0,
+    0.0, 1.0,
+    
+    0.0, 0.0,
+    1.0, 0.0,
+    1.0, 1.0
+  ]
+    
   init() {
     let textureLoader = MTKTextureLoader(device: Renderer.device)
     do {
@@ -20,12 +39,7 @@ public class ImageMean: Renderable {
         options: nil
       )
     } catch let error { fatalError(error.localizedDescription) }
-
-//    computedTexture = Self.runMPS(texture: texture)
-    
-    let (mdlMesh, mtkMesh) = Self.genRectMesh()
-    self.rectMesh = mtkMesh
-    pipelineState = Self.makePipeline(mdlMesh: mdlMesh)
+    pipelineState = Self.makePipeline()
   }
   
   static func runMPS(texture: MTLTexture) -> MTLTexture {
@@ -41,21 +55,20 @@ public class ImageMean: Renderable {
           let commandBuffer = Renderer.commandQueue.makeCommandBuffer()
     else { fatalError() }
 
-    let shader: MPSUnaryImageKernel = MPSImageReduceRowMean(device: Renderer.device)
+    let squashShader: MPSUnaryImageKernel = MPSImageReduceRowMean(device: Renderer.device)
 //    let shader = MPSImageMedian(device: Renderer.device, kernelDiameter: 51)
 //    var shader = MPSImageGaussianBlur(device: Renderer.device, sigma: 10)
-//    var transform: Float = 1.2
 //    var shader = MPSImageCanny(device: Renderer.device)
-    shader.encode(
+    squashShader.encode(
       commandBuffer: commandBuffer,
       sourceTexture: texture,
       destinationTexture: destination
     )
     
-    let shader2 = MPSImageSobel(device: Renderer.device)
+    let derivativeShader = MPSImageSobel(device: Renderer.device)
     guard let destination2 = Renderer.device.makeTexture(descriptor: descriptor) else { fatalError() }
     
-    shader2.encode(
+    derivativeShader.encode(
       commandBuffer: commandBuffer,
       sourceTexture: destination,
       destinationTexture: destination2
@@ -107,13 +120,11 @@ public class ImageMean: Renderable {
     } catch let error { fatalError(error.localizedDescription) }
   }
   
-  static func makePipeline(mdlMesh: MDLMesh) -> MTLRenderPipelineState {
+  static func makePipeline() -> MTLRenderPipelineState {
     let pipelineDescriptor = buildPartialPipelineDescriptor(
       vertex: "vertex_image_mean",
       fragment: "fragment_image_mean"
     )
-    pipelineDescriptor.vertexDescriptor = MTKMetalVertexDescriptorFromModelIO(mdlMesh.vertexDescriptor)
-
     do {
       let pipelineState = try Renderer.device.makeRenderPipelineState(descriptor: pipelineDescriptor)
       return pipelineState
@@ -127,7 +138,17 @@ public class ImageMean: Renderable {
     renderEncoder.setRenderPipelineState(pipelineState)
     
     renderEncoder.setTriangleFillMode(.fill)
-    renderEncoder.setVertexBuffer(rectMesh.vertexBuffers.first!.buffer, offset: 0, index: 0)
+    renderEncoder.setVertexBytes(
+      &vertices,
+      length: MemoryLayout<Float>.stride * vertices.count,
+      index: 0
+    )
+    renderEncoder.setVertexBytes(
+      &textureCoordinates,
+      length: MemoryLayout<Float>.stride * textureCoordinates.count,
+      index: 1
+    )
+    
     renderEncoder.setFragmentTexture(computedTexture, index: 1)
     renderEncoder.setFragmentTexture(texture, index: 2)
     
@@ -136,13 +157,6 @@ public class ImageMean: Renderable {
 //    print(bla)
     renderEncoder.setFragmentBytes(&bla, length: MemoryLayout<Float>.stride, index: 3)
     
-    let submesh = rectMesh.submeshes.first!
-    renderEncoder.drawIndexedPrimitives(
-      type: .triangle,
-      indexCount: submesh.indexCount,
-      indexType: submesh.indexType,
-      indexBuffer: submesh.indexBuffer.buffer,
-      indexBufferOffset: submesh.indexBuffer.offset
-    )
+    renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertices.count)
   }
 }

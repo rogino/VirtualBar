@@ -15,7 +15,7 @@ func buildPartialPipelineDescriptor(
 ) -> MTLRenderPipelineDescriptor {
   let descriptor = MTLRenderPipelineDescriptor()
   descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
-  descriptor.depthAttachmentPixelFormat = .depth32Float
+//  descriptor.depthAttachmentPixelFormat = .depth32Float
   descriptor.vertexFunction   = Renderer.library.makeFunction(name: vertexFunctionName)
   descriptor.fragmentFunction = Renderer.library.makeFunction(name: fragmentFunctionName)
   return descriptor

@@ -6,7 +6,6 @@ public class ImageMean: Renderable {
   var computedTexture: MTLTexture!
   
   let pipelineState: MTLRenderPipelineState
-  
   var threshold: Float = 0
   
   var vertices: [Float] = [
@@ -56,9 +55,6 @@ public class ImageMean: Renderable {
     else { fatalError() }
 
     let squashShader: MPSUnaryImageKernel = MPSImageReduceRowMean(device: Renderer.device)
-//    let shader = MPSImageMedian(device: Renderer.device, kernelDiameter: 51)
-//    var shader = MPSImageGaussianBlur(device: Renderer.device, sigma: 10)
-//    var shader = MPSImageCanny(device: Renderer.device)
     squashShader.encode(
       commandBuffer: commandBuffer,
       sourceTexture: texture,
@@ -78,48 +74,6 @@ public class ImageMean: Renderable {
     return destination2
   }
   
-//  static func runNonMps(descriptor: MTLTextureDescriptor, texture: MTLTexture) -> MTLTexture {
-//    guard let destination = Renderer.device.makeTexture(descriptor: descriptor),
-//          let commandBuffer = Renderer.commandQueue.makeCommandBuffer()
-//    else { fatalError() }
-//
-//    let descriptor = MTLComputePipelineDescriptor()
-//    Renderer.library.makeFunction(name: "mean_filter")
-//
-//    let computeEncoder = commandBuffer.makeComputeCommandEncoder()!
-//    computeEncoder.setComputePipelineState(tessellationPipelineState)
-//    computeEncoder.setBytes(&edgeFactors,
-//                            length: MemoryLayout<Float>.size * edgeFactors.count,
-//                            index: 0)
-//    computeEncoder.setBytes(&insideFactors,
-//                            length: MemoryLayout<Float>.size * insideFactors.count,
-//                            index: 1)
-//    computeEncoder.setBuffer(tessellationFactorsBuffer, offset: 0, index: 2)
-//    computeEncoder.dispatchThreadgroups(MTLSizeMake(patchCount, 1, 1), threadsPerThreadgroup: MTLSizeMake(width, 1, 1))
-//    computeEncoder.endEncoding()
-//
-
-//    let kernel = Renderer.device.makeComputePipelineState(function: <#T##MTLFunction#>)
-//    return nil;
-//  }
-  
-  
-  static func genRectMesh() -> (MDLMesh, MTKMesh) {
-    let allocator = MTKMeshBufferAllocator(device: Renderer.device)
-    let mdlMesh = MDLMesh(
-      boxWithExtent: [2, 2, 0],
-      segments: [1, 1, 1],
-      inwardNormals: false,
-      geometryType: .triangles,
-      allocator: allocator
-    )
-    
-    do {
-      let mtkMesh = try MTKMesh(mesh: mdlMesh, device: Renderer.device)
-      return (mdlMesh, mtkMesh)
-    } catch let error { fatalError(error.localizedDescription) }
-  }
-  
   static func makePipeline() -> MTLRenderPipelineState {
     let pipelineDescriptor = buildPartialPipelineDescriptor(
       vertex: "vertex_image_mean",
@@ -129,9 +83,7 @@ public class ImageMean: Renderable {
       let pipelineState = try Renderer.device.makeRenderPipelineState(descriptor: pipelineDescriptor)
       return pipelineState
     } catch let error { fatalError(error.localizedDescription) }
-
   }
-  
   
   public func draw(renderEncoder: MTLRenderCommandEncoder) {
     computedTexture = Self.runMPS(texture: texture)
@@ -157,6 +109,6 @@ public class ImageMean: Renderable {
 //    print(bla)
     renderEncoder.setFragmentBytes(&bla, length: MemoryLayout<Float>.stride, index: 3)
     
-    renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertices.count)
+    renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertices.count / 2)
   }
 }

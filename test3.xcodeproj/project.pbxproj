@@ -34,6 +34,10 @@
 		4F617A5C27F8019B00011EE6 /* ImageMean.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F617A5A27F8019A00011EE6 /* ImageMean.swift */; };
 		4F617A5E27F8083200011EE6 /* ImageMean.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F617A5D27F8083200011EE6 /* ImageMean.metal */; };
 		4F617A5F27F8083200011EE6 /* ImageMean.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F617A5D27F8083200011EE6 /* ImageMean.metal */; };
+		4FAE79B428003237008F1E70 /* FingerPointsRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FAE79B328003237008F1E70 /* FingerPointsRenderer.swift */; };
+		4FAE79B528003237008F1E70 /* FingerPointsRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FAE79B328003237008F1E70 /* FingerPointsRenderer.swift */; };
+		4FAE79B7280038B5008F1E70 /* FingerPointsRenderer.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4FAE79B6280038B5008F1E70 /* FingerPointsRenderer.metal */; };
+		4FAE79B8280038B5008F1E70 /* FingerPointsRenderer.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4FAE79B6280038B5008F1E70 /* FingerPointsRenderer.metal */; };
 		4FB9B7DA27F9A509005F553B /* RendererOld.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB9B7D927F9A509005F553B /* RendererOld.swift */; };
 		4FB9B7DB27F9A509005F553B /* RendererOld.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB9B7D927F9A509005F553B /* RendererOld.swift */; };
 /* End PBXBuildFile section */
@@ -61,6 +65,8 @@
 		4F0A358E27F43BD000C2E43B /* Triangle.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Triangle.metal; sourceTree = "<group>"; };
 		4F617A5A27F8019A00011EE6 /* ImageMean.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageMean.swift; sourceTree = "<group>"; };
 		4F617A5D27F8083200011EE6 /* ImageMean.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ImageMean.metal; sourceTree = "<group>"; };
+		4FAE79B328003237008F1E70 /* FingerPointsRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerPointsRenderer.swift; sourceTree = "<group>"; };
+		4FAE79B6280038B5008F1E70 /* FingerPointsRenderer.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = FingerPointsRenderer.metal; sourceTree = "<group>"; };
 		4FB9B7D927F9A509005F553B /* RendererOld.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RendererOld.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -147,6 +153,8 @@
 				4F0A358E27F43BD000C2E43B /* Triangle.metal */,
 				4F617A5A27F8019A00011EE6 /* ImageMean.swift */,
 				4F617A5D27F8083200011EE6 /* ImageMean.metal */,
+				4FAE79B6280038B5008F1E70 /* FingerPointsRenderer.metal */,
+				4FAE79B328003237008F1E70 /* FingerPointsRenderer.swift */,
 			);
 			path = Renderables;
 			sourceTree = "<group>";
@@ -253,6 +261,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				4F617A5E27F8083200011EE6 /* ImageMean.metal in Sources */,
+				4FAE79B428003237008F1E70 /* FingerPointsRenderer.swift in Sources */,
+				4FAE79B7280038B5008F1E70 /* FingerPointsRenderer.metal in Sources */,
 				4F0A358727F3FFBA00C2E43B /* Sphere.swift in Sources */,
 				4FB9B7DA27F9A509005F553B /* RendererOld.swift in Sources */,
 				1384A38122C1B3C2006036BA /* ViewController.swift in Sources */,
@@ -272,6 +282,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				4F617A5F27F8083200011EE6 /* ImageMean.metal in Sources */,
+				4FAE79B528003237008F1E70 /* FingerPointsRenderer.swift in Sources */,
+				4FAE79B8280038B5008F1E70 /* FingerPointsRenderer.metal in Sources */,
 				4F0A358827F3FFBA00C2E43B /* Sphere.swift in Sources */,
 				4FB9B7DB27F9A509005F553B /* RendererOld.swift in Sources */,
 				1384A3F122C1F12C006036BA /* Shaders.metal in Sources */,

@@ -1,14 +1,18 @@
 import MetalKit
 import AVFoundation
+import Vision
 
 class Renderer: NSObject {
   static var device: MTLDevice!
   static var commandQueue: MTLCommandQueue!
   static var library: MTLLibrary!
 
-  let depthStencilState: MTLDepthStencilState
+//  let depthStencilState: MTLDepthStencilState
   var pipelineState: MTLRenderPipelineState!
   var renderables: [Renderable] = []
+  
+  let fingerDetector = FingerDetector()
+  var fingerPoints: [simd_float3] = []
   
   static var aspect: Float = 1.0
   
@@ -16,7 +20,6 @@ class Renderer: NSObject {
   var cameraTexture: MTLTexture? = nil
   
   var cameraTextureCache: CVMetalTextureCache?
-
 
   public convenience init(metalView: MTKView) {
     guard let device = MTLCreateSystemDefaultDevice() else {
@@ -28,14 +31,14 @@ class Renderer: NSObject {
   public init(metalView: MTKView, device: MTLDevice) {
     metalView.device = device
     metalView.clearColor = MTLClearColor(red: 0.5, green: 0, blue: 0, alpha: 1)
-    metalView.depthStencilPixelFormat = .depth32Float
+//    metalView.depthStencilPixelFormat = .depth32Float
     
     Self.aspect = Float(metalView.bounds.width)/Float(metalView.bounds.height)
     Self.device = device
     Self.commandQueue = device.makeCommandQueue()!
     Self.library = device.makeDefaultLibrary()
     
-    self.depthStencilState = Self.buildDepthStencilState()!
+//    self.depthStencilState = Self.buildDepthStencilState()!
     
     super.init()
     metalView.delegate = self
@@ -46,6 +49,7 @@ class Renderer: NSObject {
 //    renderables.append(Sphere())
 //    renderables.append(Triangle())
     renderables.append(ImageMean())
+    renderables.append(FingerPointsRenderer())
   }
 
   // Library: set of metal functions
@@ -78,12 +82,16 @@ extension Renderer: MTKViewDelegate {
         return
     }
     
-    renderEncoder.setDepthStencilState(depthStencilState)
+//    renderEncoder.setDepthStencilState(depthStencilState)
     
     for renderable in renderables {
       if cameraTexture != nil,
          let imageMean = renderable as? ImageMean {
         imageMean.texture = cameraTexture
+      }
+      
+      if let fingerPointsRenderer = renderable as? FingerPointsRenderer {
+        fingerPointsRenderer.fingerPoints = fingerPoints
       }
       renderable.draw(renderEncoder: renderEncoder)
     }
@@ -110,11 +118,13 @@ extension Renderer: AVCaptureVideoDataOutputSampleBufferDelegate {
   }
   
   func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-    print("Buffer outputted")
+//    print("Buffer outputted")
     guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-      fatalError("Conversion from CMSampleBuffer to CVImageBuffer failed"
-      )
+      fatalError("Conversion from CMSampleBuffer to CVImageBuffer failed")
     }
+    
+    fingerPoints = fingerDetector.detectFingers(sampleBuffer: sampleBuffer)
+    
     let width = CVPixelBufferGetWidth(imageBuffer)
     let height = CVPixelBufferGetHeight(imageBuffer)
     
@@ -141,6 +151,62 @@ extension Renderer: AVCaptureVideoDataOutputSampleBufferDelegate {
     }
     
     self.cameraTexture = texture
+  }
+}
+
+
+class FingerDetector {
+  var handPoseRequest = VNDetectHumanHandPoseRequest()
+  init() {
+    handPoseRequest.maximumHandCount = 2
+  }
+  
+  func detectFingers(sampleBuffer: CMSampleBuffer) -> [simd_float3] {
+    // https://developer.apple.com/videos/play/wwdc2020/10653/
+    let handler = VNImageRequestHandler(
+      cmSampleBuffer: sampleBuffer,
+      orientation: .up,
+      options: [:]
+    )
     
+    var points: [simd_float3] = []
+    
+    do {
+      try handler.perform([handPoseRequest])
+      guard let results = handPoseRequest.results, results.count > 0 else {
+        return []
+      }
+      
+      for hand in results {
+        let observation = hand
+        
+        let  indexFingerPoints = try observation.recognizedPoints(.indexFinger)
+        let middleFingerPoints = try observation.recognizedPoints(.middleFinger)
+        guard let  indexTipPoint =  indexFingerPoints[.indexTip],
+              let middleTipPoint = middleFingerPoints[.middleTip] else {
+          continue
+        }
+        
+//        guard  indexTipPoint.confidence > confidenceThreshold &&
+//              middleTipPoint.confidence > confidenceThreshold else {
+//          continue
+//        }
+        
+        func transform(_ point: VNRecognizedPoint) -> simd_float3 {
+          // Convert from [0, 1] to [-1, 1]
+          let x: Float = Float(point.location.x) * 2 - 1
+          let y: Float = Float(point.location.y) * 2 - 1
+          
+          return simd_float3(x, y, point.confidence)
+        }
+        points.append(transform(indexTipPoint))
+        points.append(transform(middleTipPoint))
+      }
+      
+      return points
+      
+    } catch {
+      fatalError(error.localizedDescription)
+    }
   }
 }

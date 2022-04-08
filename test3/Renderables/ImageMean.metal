@@ -15,8 +15,8 @@ vertex VertexOutImageMean vertex_image_mean(
             uint id                   [[vertex_id]]
 ) {
   return {
-    .position = float4(vertices[id], 0, 1),
-    .texturePosition =  textureCoordinates[id]
+    .position        = float4(vertices[id], 0, 1),
+    .texturePosition = textureCoordinates[id]
   };
 }
 
@@ -34,5 +34,3 @@ fragment float4 fragment_image_mean(
   float4 color = original;
   return color;
 }
-
-

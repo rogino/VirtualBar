@@ -161,11 +161,21 @@ class FingerDetector {
     handPoseRequest.maximumHandCount = 2
   }
   
+  // Convert VN point point to float3, with z being confidence
+  func transform(_ point: VNRecognizedPoint) -> simd_float3 {
+    // Convert from [0, 1] to [-1, 1]
+    let x: Float = Float(point.location.x) * 2 - 1
+    let y: Float = Float(point.location.y) * 2 - 1
+    
+    return simd_float3(x, y, point.confidence)
+  }
+  
+  
   func detectFingers(sampleBuffer: CMSampleBuffer) -> [simd_float3] {
     // https://developer.apple.com/videos/play/wwdc2020/10653/
     let handler = VNImageRequestHandler(
       cmSampleBuffer: sampleBuffer,
-      orientation: .up,
+      orientation: .upMirrored,
       options: [:]
     )
     
@@ -180,25 +190,22 @@ class FingerDetector {
       for hand in results {
         let observation = hand
         
+        for finger in observation.availableJointsGroupNames {
+          let finger = try observation.recognizedPoints(finger)
+          for joint in observation.availableJointNames {
+            if let point = finger[joint] {
+              points.append(transform(point))
+            }
+          }
+        }
+        
         let  indexFingerPoints = try observation.recognizedPoints(.indexFinger)
         let middleFingerPoints = try observation.recognizedPoints(.middleFinger)
         guard let  indexTipPoint =  indexFingerPoints[.indexTip],
               let middleTipPoint = middleFingerPoints[.middleTip] else {
           continue
         }
-        
-//        guard  indexTipPoint.confidence > confidenceThreshold &&
-//              middleTipPoint.confidence > confidenceThreshold else {
-//          continue
-//        }
-        
-        func transform(_ point: VNRecognizedPoint) -> simd_float3 {
-          // Convert from [0, 1] to [-1, 1]
-          let x: Float = Float(point.location.x) * 2 - 1
-          let y: Float = Float(point.location.y) * 2 - 1
-          
-          return simd_float3(x, y, point.confidence)
-        }
+
         points.append(transform(indexTipPoint))
         points.append(transform(middleTipPoint))
       }

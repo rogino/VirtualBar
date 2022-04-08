@@ -25,7 +25,6 @@ public class FingerPointsRenderer: Renderable {
   public func draw(renderEncoder: MTLRenderCommandEncoder) {
     renderEncoder.setRenderPipelineState(pipelineState)
     guard fingerPoints.count > 0 else { return }
-    print(fingerPoints)
     renderEncoder.setVertexBytes(
       &fingerPoints,
       length: MemoryLayout<simd_float3>.stride * fingerPoints.count,

@@ -16,7 +16,8 @@ vertex VertexOutImageMean vertex_image_mean(
 ) {
   return {
     .position        = float4(vertices[id], 0, 1),
-    .texturePosition = textureCoordinates[id]
+    // Mirror the image
+    .texturePosition = float2(1 - textureCoordinates[id].x, textureCoordinates[id].y)
   };
 }
 

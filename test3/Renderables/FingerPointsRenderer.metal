@@ -18,7 +18,7 @@ float3 hsv2rgb(float3 in) {
     return out;
   }
   if (h >= 1.0 || h < 0.0) h = 0.0;
-  h /= 60.0;
+  h *= 6;
   i = (short)h;
   ff = h - i;
   p = v * (1.0 - s);
@@ -76,7 +76,7 @@ vertex VertexOutFingerPoints vertex_finger_points(
   return {
     .position   = float4(vertices[id].x, vertices[id].y, 1, 1),
     .confidence = vertices[id].y,
-    .pointSize = 20
+    .pointSize = 10
   };
 }
 

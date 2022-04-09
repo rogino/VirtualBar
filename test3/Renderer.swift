@@ -190,14 +190,14 @@ class FingerDetector {
       for hand in results {
         let observation = hand
         
-        for finger in observation.availableJointsGroupNames {
-          let finger = try observation.recognizedPoints(finger)
-          for joint in observation.availableJointNames {
-            if let point = finger[joint] {
-              points.append(transform(point))
-            }
-          }
-        }
+//        for finger in observation.availableJointsGroupNames {
+//          let finger = try observation.recognizedPoints(finger)
+//          for joint in observation.availableJointNames {
+//            if let point = finger[joint] {
+//              points.append(transform(point))
+//            }
+//          }
+//        }
         
         let  indexFingerPoints = try observation.recognizedPoints(.indexFinger)
         let middleFingerPoints = try observation.recognizedPoints(.middleFinger)

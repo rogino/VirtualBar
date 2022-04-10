@@ -87,11 +87,11 @@ public class ImageMean: Renderable {
       mipmapLevel: 0
     )
 
-    var chosen: (x: Int, size: Int) = (x: -1, size: -1)
-    var current: (x: Int, size: Int) = (x: 0, size:  0)
-    
     let threshold: Float = 5
-    let maxSize = 50
+    let sizeRange = 30...50
+    
+    var current: (x: Int, size: Int) = (x: 0, size:  0)
+    var possibleMatches: [(x: Int, size: Int)] = []
     
     var pointer = sobelCpuBuffer
     for i in 0..<texture.height {
@@ -101,24 +101,28 @@ public class ImageMean: Renderable {
         Float(pointer.pointee.z)
       ) / 3
       
-      if val < threshold { 
+      if val < threshold {
         current.size += 1
       } else {
-        if chosen.size < current.size && current.size < maxSize {
-          chosen = current
+        if sizeRange.contains(current.size) {
+          possibleMatches.append(current)
         }
         current = (x: i, size: 0)
       }
-      
       pointer = pointer.advanced(by: 1)
     }
-          
-    activeArea = [
-       Float(chosen.x)               / Float(texture.height),
-       Float(chosen.x + chosen.size + 1) / Float(texture.height)
-    ]
-//    print(chosen)
     sobelCpuBuffer.deallocate()
+          
+    if possibleMatches.isEmpty {
+      activeArea = [-1, -1]
+    } else {
+      let chosen = possibleMatches.max(by: { $0.size > $1.size })!
+      
+      activeArea = [
+        Float(chosen.x)               / Float(texture.height),
+        Float(chosen.x + chosen.size + 1) / Float(texture.height)
+      ]
+    }
     
     return sobelTextureBuffer
   }

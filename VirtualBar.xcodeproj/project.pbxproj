@@ -36,8 +36,8 @@
 		4F2035C32802BC8100F89CAE /* Triangle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Triangle.swift; sourceTree = "<group>"; };
 		4F2035C62802BC8100F89CAE /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Shaders.metal; path = VirtualBar/Shaders.metal; sourceTree = SOURCE_ROOT; };
 		4F2035C72802BC8100F89CAE /* Renderer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Renderer.swift; path = VirtualBar/Renderer.swift; sourceTree = SOURCE_ROOT; };
-		4F2035C82802BC8100F89CAE /* Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Common.h; path = virtualbar/Common.h; sourceTree = SOURCE_ROOT; };
-		4F2035C92802BC8100F89CAE /* Helper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Helper.swift; path = virtualbar/Helper.swift; sourceTree = SOURCE_ROOT; };
+		4F2035C82802BC8100F89CAE /* Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Common.h; path = VirtualBar/Common.h; sourceTree = SOURCE_ROOT; };
+		4F2035C92802BC8100F89CAE /* Helper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Helper.swift; path = VirtualBar/Helper.swift; sourceTree = SOURCE_ROOT; };
 		4FA7E4BC2802C182005AC971 /* ContentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4FCB20A82802BBA0003DC9BC /* VirtualBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FCB20AB2802BBA0003DC9BC /* VirtualBarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualBarApp.swift; sourceTree = "<group>"; };

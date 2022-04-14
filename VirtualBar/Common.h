@@ -32,4 +32,9 @@ typedef enum {
 //  vector_float3 cameraPosition;
 //} FragmentUniforms;
 //
+
+
+typedef struct {
+  float deadzone;
+} LineOfSymmetryArgs;
 #endif /* Common_h */

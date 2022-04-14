@@ -8,7 +8,10 @@ public class ImageMean: Renderable {
   
   var squashTextureBuffer: MTLTexture?
   var sobelTextureBuffer: MTLTexture?
+  var sobelCpuBuffer: UnsafeMutablePointer<SIMD4<UInt8>>?
   var symmetryOutputBuffer: MTLBuffer?
+  
+  var useCpuSymmetry: Bool = true
   
   
   let pipelineState: MTLRenderPipelineState
@@ -77,6 +80,8 @@ public class ImageMean: Renderable {
     if (self.symmetryOutputBuffer == nil) {
       fatalError()
     }
+    
+    sobelCpuBuffer = UnsafeMutablePointer<SIMD4<UInt8>>.allocate(capacity: texture.height)
   }
   
   func runMPS(texture: MTLTexture) -> MTLTexture {
@@ -105,39 +110,11 @@ public class ImageMean: Renderable {
     commandBuffer.commit()
     
     commandBuffer.waitUntilCompleted()
-    // Squash + Sobel + simple symmetry compute: 13 ms
+    // Squash + Sobel + simple symmetry compute: ~1.3 ms
     print("GPU Full Pipeline Duration:", CFAbsoluteTimeGetCurrent() - startTime)
     
-    // https://developer.apple.com/documentation/metal/mtltexture/1515751-getbytes
-
-//    let sobelCpuBuffer = UnsafeMutablePointer<SIMD4<UInt8>>.allocate(capacity: texture.height)
-//    sobelTextureBuffer!.getBytes(
-//      sobelCpuBuffer,
-//      bytesPerRow: MemoryLayout<SIMD4<UInt8>>.stride,
-//      from: MTLRegion(
-//        origin: MTLOrigin(x: 0, y: 0, z: 0),
-//        size: MTLSize(width: 1, height: texture.height, depth: 1)
-//      ),
-//      mipmapLevel: 0
-//    )
-//
-//    var pointer = sobelCpuBuffer
-//
-//    var output: [Float] = []
-//    for _ in 0..<texture.height {
-//      let val = (
-//        Float(pointer.pointee.x) +
-//        Float(pointer.pointee.y) +
-//        Float(pointer.pointee.z)
-//      ) / 3
-//      output.append(val)
-//      pointer = pointer.advanced(by: 1)
-//    }
-//    sobelCpuBuffer.deallocate()
     
     var pointer = symmetryOutputBuffer!.contents().bindMemory(to: Float.self, capacity: texture.height)
-    
-    var output: [Float] = []
     var min: (i: Int, v: Float) = (i: -1, v: Float.infinity)
     for i in 0..<texture.height {
       if pointer.pointee < min.v {
@@ -145,13 +122,37 @@ public class ImageMean: Renderable {
       }
       pointer = pointer.advanced(by: 1)
     }
+    print("GPU", min)
     activeArea = (
       Float(min.i - 3) / Float(texture.height),
       Float(min.i + 3) / Float(texture.height)
     )
     
-//    activeArea = Self.detectActiveArea(sobelOutput: output)
-//    activeArea = Self.detectLineOfSymmetry(sobelOutput: output)
+
+    if useCpuSymmetry {
+      // https://developer.apple.com/documentation/metal/mtltexture/1515751-getbytes
+      sobelTextureBuffer!.getBytes(
+        sobelCpuBuffer!,
+        bytesPerRow: MemoryLayout<SIMD4<UInt8>>.stride,
+        from: MTLRegion(
+          origin: MTLOrigin(x: 0, y: 0, z: 0),
+          size: MTLSize(width: 1, height: texture.height, depth: 1)
+        ),
+        mipmapLevel: 0
+      )
+
+      var pointer = sobelCpuBuffer!
+
+      var output: [SIMD4<UInt8>] = []
+      for _ in 0..<texture.height {
+        output.append(pointer.pointee)
+        pointer = pointer.advanced(by: 1)
+      }
+//      sobelCpuBuffer!.deallocate()
+      //    activeArea = Self.detectActiveArea(sobelOutput: output)
+      activeArea = Self.detectLineOfSymmetry(sobelOutput: output)
+    }
+    
     return sobelTextureBuffer!
   }
   
@@ -231,7 +232,7 @@ public class ImageMean: Renderable {
   }
   
   static func detectLineOfSymmetry(
-    sobelOutput: [Float]
+    sobelOutput: [SIMD4<UInt8>]
   ) -> (Float, Float) {
     let startTime = CFAbsoluteTimeGetCurrent()
     var variances: [(Int, Float)] = []
@@ -243,15 +244,16 @@ public class ImageMean: Renderable {
       let n = min(center, sobelOutput.count - center - 1)
       var sum: Float = 0
       for i in 1...n {
-        let delta = sobelOutput[center + i] - sobelOutput[center - i]
-        sum += delta * delta
+        var delta = SIMD4<Float>(sobelOutput[center + i]) - SIMD4<Float>(sobelOutput[center - i])
+        delta.w = 0
+        sum += dot(delta, delta) / 3
       }
       variances.append((center, sum / Float(n)))
     }
     
     variances = variances.sorted(by: { $0.1 < $1.1 })
-    print("CPU Time:", CFAbsoluteTimeGetCurrent() - startTime) // ~40 ms
-    print(variances[..<30])
+    print("CPU Time:", CFAbsoluteTimeGetCurrent() - startTime) // ~20 ms
+    print(variances[0])
     return (
       Float(variances[0].0 - 3) / Float(sobelOutput.count),
       Float(variances[0].0 + 3) / Float(sobelOutput.count)

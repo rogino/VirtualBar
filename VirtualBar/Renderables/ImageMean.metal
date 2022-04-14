@@ -48,6 +48,8 @@ fragment float4 fragment_image_mean(
 
 kernel void line_of_symmetry(
   texture2d<float> sobelTexture [[texture(0)]],
+  // https://stackoverflow.com/questions/47738441/passing-textures-with-uint8-component-type-to-metal-compute-shader
+  // Sobel texture is uint8_t but automatically converted to float
   device float *outputBuffer [[buffer(0)]],
   constant LineOfSymmetryArgs &args [[buffer(1)]],
   uint index [[thread_position_in_grid]]
@@ -62,10 +64,11 @@ kernel void line_of_symmetry(
   float sum = 0;
   int n = min(center, sobelTexture.get_height() - center - 1);
   for (int i = 1; i <= n; i++) {
-    float below = length(sobelTexture.sample(s, float2(0, center - i)).rgb);
-    float above = length(sobelTexture.sample(s, float2(0, center + i)).rgb);
-    float delta = below - above;
-    sum += delta * delta;
+    float3 below = sobelTexture.sample(s, float2(0, center - i)).rgb;
+    float3 above = sobelTexture.sample(s, float2(0, center + i)).rgb;
+    float3 delta = below - above; // Take advantage of RGB data colour differences
+    // TODO get rid of division - not requied
+    sum += dot(delta, delta) / 3;
   }
   outputBuffer[index] = sum / n;
 }

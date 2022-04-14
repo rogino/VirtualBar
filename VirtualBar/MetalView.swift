@@ -53,8 +53,9 @@ struct MetalView: View {
 }
 
 extension MetalView {
-    func setupCaptureSession() {
+  func setupCaptureSession() {
     captureSession.sessionPreset = .qHD960x540
+//    captureSession.sessionPreset = .vga640x480
     guard let device = AVCaptureDevice.default(for: .video) else {
       fatalError("AVCaptureDevice not found")
     }

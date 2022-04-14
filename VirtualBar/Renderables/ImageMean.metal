@@ -44,3 +44,28 @@ fragment float4 fragment_image_mean(
   float4 color = original;
   return color;
 }
+
+
+kernel void line_of_symmetry(
+  texture2d<float> sobelTexture [[texture(0)]],
+  device float *outputBuffer [[buffer(0)]],
+  constant LineOfSymmetryArgs &args [[buffer(1)]],
+  uint index [[thread_position_in_grid]]
+) {
+  constexpr sampler s(coord::pixel);
+  float center = index;
+  
+  if (center < args.deadzone || sobelTexture.get_height() - center - 1 < args.deadzone) {
+    outputBuffer[index] = INFINITY;
+    return;
+  }
+  float sum = 0;
+  int n = min(center, sobelTexture.get_height() - center - 1);
+  for (int i = 1; i <= n; i++) {
+    float below = length(sobelTexture.sample(s, float2(0, center - i)).rgb);
+    float above = length(sobelTexture.sample(s, float2(0, center + i)).rgb);
+    float delta = below - above;
+    sum += delta * delta;
+  }
+  outputBuffer[index] = sum / n;
+}

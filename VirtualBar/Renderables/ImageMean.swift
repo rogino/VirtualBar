@@ -1,6 +1,9 @@
 import MetalKit
 import MetalPerformanceShaders
 
+
+typealias float2 = SIMD2<Float>
+
 public class ImageMean: Renderable {
   public var texture: MTLTexture!
   var computedTexture: MTLTexture!
@@ -8,14 +11,11 @@ public class ImageMean: Renderable {
   
   var squashTextureBuffer: MTLTexture?
   var sobelTextureBuffer: MTLTexture?
-  var sobelCpuBuffer: UnsafeMutablePointer<SIMD4<UInt8>>?
-  var symmetryOutputBuffer: MTLBuffer?
-  
-  var useCpuSymmetry: Bool = true
-  
+  var cpuImageColumnBuffer: UnsafeMutablePointer<SIMD4<UInt8>>?
+//  var symmetryOutputBuffer: MTLBuffer?
   
   let pipelineState: MTLRenderPipelineState
-  let lineOfSymmetryPSO: MTLComputePipelineState
+//  let lineOfSymmetryPSO: MTLComputePipelineState
   var threshold: Float = 0
   
   var vertices: [Float] = [
@@ -38,7 +38,7 @@ public class ImageMean: Renderable {
     1.0, 1.0
   ]
   
-  var activeArea: (Float, Float) = (-1, -1)
+  var activeArea: [float2] = []
     
   init() {
     let textureLoader = MTKTextureLoader(device: Renderer.device)
@@ -51,7 +51,7 @@ public class ImageMean: Renderable {
       )
     } catch let error { fatalError(error.localizedDescription) }
     pipelineState = Self.makePipeline()
-    lineOfSymmetryPSO = Self.makeLineOfSymmetryPipeline()
+//    lineOfSymmetryPSO = Self.makeLineOfSymmetryPipeline()
   }
   
   
@@ -73,18 +73,18 @@ public class ImageMean: Renderable {
     self.squashTextureBuffer = squashTextureBuffer
     self.sobelTextureBuffer = sobelTextureBuffer
     
-    self.symmetryOutputBuffer = Renderer.device.makeBuffer(
-      length: texture.height * MemoryLayout<Float>.stride,
-      options: .storageModeShared
-    )
-    if (self.symmetryOutputBuffer == nil) {
-      fatalError()
-    }
+//    self.symmetryOutputBuffer = Renderer.device.makeBuffer(
+//      length: texture.height * MemoryLayout<Float>.stride,
+//      options: .storageModeShared
+//    )
+//    if (self.symmetryOutputBuffer == nil) {
+//      fatalError()
+//    }
     
-    sobelCpuBuffer = UnsafeMutablePointer<SIMD4<UInt8>>.allocate(capacity: texture.height)
+    cpuImageColumnBuffer = UnsafeMutablePointer<SIMD4<UInt8>>.allocate(capacity: texture.height)
   }
   
-  func runMPS(texture: MTLTexture) -> MTLTexture {
+  func runMPS(texture: MTLTexture) {
     let startTime = CFAbsoluteTimeGetCurrent()
     guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer()
     else { fatalError() }
@@ -106,7 +106,7 @@ public class ImageMean: Renderable {
       destinationTexture: sobelTextureBuffer!
     )
     
-    detectLineOfSymmetry(commandBuffer: commandBuffer, sobelTextureBuffer: sobelTextureBuffer!);
+//    detectLineOfSymmetry(commandBuffer: commandBuffer, sobelTextureBuffer: sobelTextureBuffer!);
     commandBuffer.commit()
     
     commandBuffer.waitUntilCompleted()
@@ -114,99 +114,75 @@ public class ImageMean: Renderable {
     print("GPU Full Pipeline Duration:", CFAbsoluteTimeGetCurrent() - startTime)
     
     
-    var pointer = symmetryOutputBuffer!.contents().bindMemory(to: Float.self, capacity: texture.height)
-    var min: (i: Int, v: Float) = (i: -1, v: Float.infinity)
-    for i in 0..<texture.height {
-      if pointer.pointee < min.v {
-        min = (i: i, v: pointer.pointee)
-      }
+    Self.copyTexture(source: sobelTextureBuffer!, destination: cpuImageColumnBuffer!)
+
+    let sobelOutputFloat: [Float] = Self.copyPixelsToArray(
+      source: cpuImageColumnBuffer!,
+      length: texture.height
+    ).map {
+      var float: SIMD4<Float> = SIMD4<Float>($0)
+      float.w = 0
+      float /= 255
+      return dot(float, float)
+    }
+    
+    Self.copyTexture(source: squashTextureBuffer!, destination: cpuImageColumnBuffer!)
+    let squashOutputFloat: [Float] = Self.copyPixelsToArray(
+      source: cpuImageColumnBuffer!,
+      length: texture.height
+    ).map {
+      var float: SIMD4<Float> = SIMD4<Float>($0)
+      float.w = 0
+      float /= 255
+      return dot(float, float)
+    }
+
+    activeArea = Self.detectActiveArea(sobelOutput: sobelOutputFloat, squashOutput: squashOutputFloat)
+  }
+  
+  // Copies single column image from MTLTexture to a CPU buffer with the correct amount of memory allocated
+  static func copyTexture(source: MTLTexture, destination: UnsafeMutablePointer<SIMD4<UInt8>>) {
+    // https://developer.apple.com/documentation/metal/mtltexture/1515751-getbytes
+    source.getBytes(
+      destination,
+      bytesPerRow: MemoryLayout<SIMD4<UInt8>>.stride,
+      from: MTLRegion(
+        origin: MTLOrigin(x: 0, y: 0, z: 0),
+        size: MTLSize(width: 1, height: source.height, depth: 1)
+      ),
+      mipmapLevel: 0
+    )
+  }
+  
+  static func copyPixelsToArray<T>(source: UnsafeMutablePointer<T>, length: Int) -> [T] {
+    var output: [T] = []
+    var pointer = source
+    
+    for _ in 0..<length {
+      output.append(pointer.pointee)
       pointer = pointer.advanced(by: 1)
     }
-    print("GPU", min)
-    activeArea = (
-      Float(min.i - 3) / Float(texture.height),
-      Float(min.i + 3) / Float(texture.height)
-    )
     
-
-    if useCpuSymmetry {
-      // https://developer.apple.com/documentation/metal/mtltexture/1515751-getbytes
-      sobelTextureBuffer!.getBytes(
-        sobelCpuBuffer!,
-        bytesPerRow: MemoryLayout<SIMD4<UInt8>>.stride,
-        from: MTLRegion(
-          origin: MTLOrigin(x: 0, y: 0, z: 0),
-          size: MTLSize(width: 1, height: texture.height, depth: 1)
-        ),
-        mipmapLevel: 0
-      )
-
-      var pointer = sobelCpuBuffer!
-
-      var output: [SIMD4<UInt8>] = []
-      for _ in 0..<texture.height {
-        output.append(pointer.pointee)
-        pointer = pointer.advanced(by: 1)
-      }
-//      sobelCpuBuffer!.deallocate()
-      //    activeArea = Self.detectActiveArea(sobelOutput: output)
-      activeArea = Self.detectLineOfSymmetry(sobelOutput: output)
-    }
-    
-    return sobelTextureBuffer!
+    return output
   }
   
-  
-  
-  static func makeLineOfSymmetryPipeline() -> MTLComputePipelineState {
-    guard let function = Renderer.library.makeFunction(name: "line_of_symmetry") else {
-      fatalError("Could not make line of symmetry compute function")
-    }
-    do {
-      return try Renderer.device.makeComputePipelineState(function: function);
-    } catch {
-      print(error.localizedDescription)
-      fatalError("Failed to create compute pipeline state for symmetry")
-      
-    }
-  }
-  
-  func detectLineOfSymmetry(commandBuffer: MTLCommandBuffer, sobelTextureBuffer: MTLTexture) {
-    guard let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
-      fatalError("Failed to create compute encoder for symmetry")
-    }
-    
-    computeEncoder.setComputePipelineState(lineOfSymmetryPSO)
-    
-    var args = LineOfSymmetryArgs(deadzone: 100);
-    
-    computeEncoder.setTexture(sobelTextureBuffer, index: 0);
-    computeEncoder.setBuffer(symmetryOutputBuffer, offset: 0, index: 0);
-    computeEncoder.setBytes(&args, length: MemoryLayout<LineOfSymmetryArgs>.stride, index: 1);
-    
-    let threadsPerGroup = MTLSize(
-      width: min(lineOfSymmetryPSO.threadExecutionWidth, sobelTextureBuffer.height),
-      height: 1,
-      depth: 1
-    )
-    
-    let threadsPerGrid = MTLSize(width: sobelTextureBuffer.height, height: 1, depth: 1)
-    // Optimization: set grid size to height - 2 * deadzone
-    computeEncoder.dispatchThreads(
-      threadsPerGrid,
-      threadsPerThreadgroup: threadsPerGroup
-    )
-    computeEncoder.endEncoding()
-  }
   
   static func detectActiveArea(
     sobelOutput: [Float],
-    threshold: Float = 5,
-    sizeRange: ClosedRange<Int> = 30...50
-  ) -> (Float, Float) {
-    var current: (x: Int, size: Int) = (x: 0, size:  0)
-    var possibleMatches: [(x: Int, size: Int)] = []
+    squashOutput: [Float],
+    threshold: Float = 0.04,
+    sizeRange sizeR: ClosedRange<Int>? = nil
+  ) -> [float2] {
+    let imageHeight: Double = Double(sobelOutput.count)
+    var sizeRange = Int(floor(0.04 * imageHeight))...Int(ceil(0.06 * imageHeight))
+    if sizeR != nil {
+      sizeRange = sizeR!
+    }
+    var current: (x: Int, size: Int) = (x: 0, size: 0)
     
+    
+    // Idea: touch bar area is very smooth. Hence, find areas with a low derivative that are the correct height
+    var possibleMatches: [(x: Int, size: Int)] = []
     for (i, val) in sobelOutput.enumerated() {
       if val < threshold {
         current.size += 1
@@ -217,48 +193,24 @@ public class ImageMean: Renderable {
         current = (x: i, size: 0)
       }
     }
-          
     
-    if possibleMatches.isEmpty {
-      return (-1, -1)
-    } else {
-      let chosen = possibleMatches.max(by: { $0.size > $1.size })!
-      
+    // Idea: key rows can get detected, so use the squash map to get the color of the area
+    // The active area will be the lightest area
+    let coloredMatches = possibleMatches.map {
       return (
-        Float(chosen.x)                   / Float(sobelOutput.count),
-        Float(chosen.x + chosen.size + 1) / Float(sobelOutput.count)
+        x1: $0.x,
+        x2: $0.x + $0.size,
+        color: squashOutput[$0.x + $0.size / 2]
       )
     }
+      .sorted(by: { $0.color > $1.color })
+   
+    return coloredMatches.map {[
+      Float($0.x1) / Float(sobelOutput.count),
+      Float($0.x2) / Float(sobelOutput.count)
+    ]}
   }
   
-  static func detectLineOfSymmetry(
-    sobelOutput: [SIMD4<UInt8>]
-  ) -> (Float, Float) {
-    let startTime = CFAbsoluteTimeGetCurrent()
-    var variances: [(Int, Float)] = []
-    let deadZone = 100 // First and last n values will not be used as center
-    sobelOutput.enumerated().forEach { (center, _) in
-      if center < deadZone || sobelOutput.count - center - 1 < deadZone {
-        return
-      }
-      let n = min(center, sobelOutput.count - center - 1)
-      var sum: Float = 0
-      for i in 1...n {
-        var delta = SIMD4<Float>(sobelOutput[center + i]) - SIMD4<Float>(sobelOutput[center - i])
-        delta.w = 0
-        sum += dot(delta, delta) / 3
-      }
-      variances.append((center, sum / Float(n)))
-    }
-    
-    variances = variances.sorted(by: { $0.1 < $1.1 })
-    print("CPU Time:", CFAbsoluteTimeGetCurrent() - startTime) // ~20 ms
-    print(variances[0])
-    return (
-      Float(variances[0].0 - 3) / Float(sobelOutput.count),
-      Float(variances[0].0 + 3) / Float(sobelOutput.count)
-    )
-  }
     
   
   static func makePipeline() -> MTLRenderPipelineState {
@@ -272,8 +224,51 @@ public class ImageMean: Renderable {
     } catch let error { fatalError(error.localizedDescription) }
   }
   
+  
+//  static func makeLineOfSymmetryPipeline() -> MTLComputePipelineState {
+//    guard let function = Renderer.library.makeFunction(name: "line_of_symmetry") else {
+//      fatalError("Could not make line of symmetry compute function")
+//    }
+//    do {
+//      return try Renderer.device.makeComputePipelineState(function: function);
+//    } catch {
+//      print(error.localizedDescription)
+//      fatalError("Failed to create compute pipeline state for symmetry")
+//    }
+//  }
+//
+//  func detectLineOfSymmetry(commandBuffer: MTLCommandBuffer, sobelTextureBuffer: MTLTexture) {
+//    guard let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
+//      fatalError("Failed to create compute encoder for symmetry")
+//    }
+//
+//    computeEncoder.setComputePipelineState(lineOfSymmetryPSO)
+//    
+//    var args = LineOfSymmetryArgs(deadzone: 100);
+//
+//    computeEncoder.setTexture(sobelTextureBuffer, index: 0);
+//    computeEncoder.setBuffer(symmetryOutputBuffer, offset: 0, index: 0);
+//    computeEncoder.setBytes(&args, length: MemoryLayout<LineOfSymmetryArgs>.stride, index: 1);
+//
+//    let threadsPerGroup = MTLSize(
+//      width: min(lineOfSymmetryPSO.threadExecutionWidth, sobelTextureBuffer.height),
+//      height: 1,
+//      depth: 1
+//    )
+//
+//    let threadsPerGrid = MTLSize(width: sobelTextureBuffer.height, height: 1, depth: 1)
+//    // Optimization: set grid size to height - 2 * deadzone
+//    computeEncoder.dispatchThreads(
+//      threadsPerGrid,
+//      threadsPerThreadgroup: threadsPerGroup
+//    )
+//    computeEncoder.endEncoding()
+//  }
+//
+  
+  
   public func draw(renderEncoder: MTLRenderCommandEncoder) {
-    computedTexture = runMPS(texture: texture)
+    runMPS(texture: texture)
     renderEncoder.setRenderPipelineState(pipelineState)
     
     renderEncoder.setTriangleFillMode(.fill)
@@ -287,20 +282,27 @@ public class ImageMean: Renderable {
       length: MemoryLayout<Float>.stride * textureCoordinates.count,
       index: 1
     )
+    renderEncoder.setFragmentTexture(texture, index: 0)
     
-    renderEncoder.setFragmentTexture(computedTexture, index: 1)
-    renderEncoder.setFragmentTexture(texture, index: 2)
-    threshold = (threshold + 0.001).truncatingRemainder(dividingBy: 1)
-    var bla = threshold.truncatingRemainder(dividingBy: 0.25) + 0.05
-    bla = 1;
-//    print(bla)
-    renderEncoder.setFragmentBytes(&bla, length: MemoryLayout<Float>.stride, index: 3)
+    renderEncoder.setFragmentTexture(squashTextureBuffer, index: 1)
+    renderEncoder.setFragmentTexture(sobelTextureBuffer, index: 2)
     
+    if activeArea.isEmpty {
+      activeArea = [[-1, -1]]
+      // Dies if empty array passed. Not sure how to solve it
+    }
     
     renderEncoder.setFragmentBytes(
       &activeArea,
-      length: MemoryLayout<Float>.stride * 2,
+      length: MemoryLayout<Float>.stride * 2 * activeArea.count,
       index: 4
+    )
+    
+    var count: Int = activeArea.count
+    renderEncoder.setFragmentBytes(
+      &count,
+      length: MemoryLayout<Int>.stride,
+      index: 5
     )
    
     

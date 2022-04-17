@@ -23,27 +23,52 @@ vertex VertexOutImageMean vertex_image_mean(
 
 fragment float4 fragment_image_mean(
   const VertexOutImageMean in [[stage_in]],
-  const texture2d<float> computedTexture [[texture(1)]],
-  const texture2d<float> originalTexture [[texture(2)]],
+  const texture2d<float> originalTexture [[texture(0)]],
+  const texture2d<float> squashTexture [[texture(1)]],
+  const texture2d<float> sobelTexture [[texture(2)]],
   constant float &threshold [[buffer(3)]],
-  constant float* activeArea [[buffer(4)]]
+  constant float* activeArea [[buffer(4)]],
+  constant int &numActiveAreas [[buffer(5)]]
 ) {
   constexpr sampler textureSampler;
   float4 original = originalTexture.sample(textureSampler, in.texturePosition);
-  float4 computed = computedTexture.sample(textureSampler, float2(0, in.texturePosition[1]));
+  float4 squash = squashTexture.sample(textureSampler, float2(0, in.texturePosition[1]));
+  float4 sobel = sobelTexture.sample(textureSampler, float2(0, in.texturePosition[1]));
   
                
-  if (in.texturePosition[0] < 0.1) return computed * 5;
+  if (in.texturePosition[0] < 0.1) return sobel * 5;
+  if (in.texturePosition[0] > 0.9) return squash;
   
-  if (activeArea[0] <= in.texturePosition[1] && in.texturePosition[1] <= activeArea[1]) {
-    return mix(float4(1, 0, 0, 0), original, 0.3);
+  for (int i = 0; i < numActiveAreas; i++) {
+    if (activeArea[i * 2] <= in.texturePosition[1] && in.texturePosition[1] <= activeArea[i * 2 + 1]) {
+      return mix(float4(1, i * 0.3, (i - 3) * 0.3, 0), original, i == 0 ? 0.3: 0.7);
+    }
   }
-  
-  if (computed[0] + computed[1] + computed[2] > threshold * 3) return float4(1);
   
   float4 color = original;
   return color;
 }
+
+
+float2 tangentialDistortion(
+  float2 inCoord,
+  constant float *lensIntrinsics
+) {
+  // https://docs.nvidia.com/vpi/algo_ldc.html
+  float r = length(inCoord - float2(0.5, 0.5));
+  float r2 = r * r;
+  float r4 = r2 * r2;
+  float r6 = r2 * r4;
+  
+  float k1 = lensIntrinsics[0], k2 = lensIntrinsics[1],
+        k3 = lensIntrinsics[2], k4 = lensIntrinsics[3],
+        k5 = lensIntrinsics[4], k6 = lensIntrinsics[5];
+  
+  return inCoord *
+    (1 + k1*r2 + k2*r4 + k3*r6)/
+    (1 + k4*r2 + k5*r4 + k6*r6);
+}
+
 
 
 kernel void line_of_symmetry(

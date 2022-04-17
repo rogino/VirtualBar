@@ -2,10 +2,13 @@ import MetalKit
 import MetalPerformanceShaders
 
 
-typealias float2 = SIMD2<Float>
+public typealias float2 = SIMD2<Float>
 
 public class ImageMean: Renderable {
   public var texture: MTLTexture!
+  public static var threshold: Float = 0.03
+  public static var activeAreaHeightFractionRange: ClosedRange<Float> = 0.04...0.053
+  
   var computedTexture: MTLTexture!
   
   
@@ -111,7 +114,7 @@ public class ImageMean: Renderable {
     
     commandBuffer.waitUntilCompleted()
     // Squash + Sobel + simple symmetry compute: ~1.3 ms
-    print("GPU Full Pipeline Duration:", CFAbsoluteTimeGetCurrent() - startTime)
+//    print("GPU Full Pipeline Duration:", CFAbsoluteTimeGetCurrent() - startTime)
     
     
     Self.copyTexture(source: sobelTextureBuffer!, destination: cpuImageColumnBuffer!)
@@ -137,7 +140,12 @@ public class ImageMean: Renderable {
       return dot(float, float)
     }
 
-    activeArea = Self.detectActiveArea(sobelOutput: sobelOutputFloat, squashOutput: squashOutputFloat)
+    activeArea = Self.detectActiveArea(
+      sobelOutput: sobelOutputFloat,
+      squashOutput: squashOutputFloat,
+      threshold: Self.threshold,
+      sizeRange: Self.activeAreaHeightFractionRange
+    )
   }
   
   // Copies single column image from MTLTexture to a CPU buffer with the correct amount of memory allocated
@@ -170,18 +178,14 @@ public class ImageMean: Renderable {
   static func detectActiveArea(
     sobelOutput: [Float],
     squashOutput: [Float],
-    threshold: Float = 0.04,
-    sizeRange sizeR: ClosedRange<Int>? = nil
+    threshold: Float,
+    sizeRange sizeRangeFraction: ClosedRange<Float>
   ) -> [float2] {
-    let imageHeight: Double = Double(sobelOutput.count)
-    var sizeRange = Int(floor(0.04 * imageHeight))...Int(ceil(0.06 * imageHeight))
-    if sizeR != nil {
-      sizeRange = sizeR!
-    }
-    var current: (x: Int, size: Int) = (x: 0, size: 0)
-    
-    
+    let imageHeight: Float = Float(sobelOutput.count)
+    let sizeRange = Int(floor(sizeRangeFraction.lowerBound * imageHeight))...Int(ceil(sizeRangeFraction.upperBound * imageHeight))
+   
     // Idea: touch bar area is very smooth. Hence, find areas with a low derivative that are the correct height
+    var current: (x: Int, size: Int) = (x: 0, size: 0)
     var possibleMatches: [(x: Int, size: Int)] = []
     for (i, val) in sobelOutput.enumerated() {
       if val < threshold {
@@ -286,6 +290,12 @@ public class ImageMean: Renderable {
     
     renderEncoder.setFragmentTexture(squashTextureBuffer, index: 1)
     renderEncoder.setFragmentTexture(sobelTextureBuffer, index: 2)
+    
+    renderEncoder.setFragmentBytes(
+      &Self.threshold,
+      length: MemoryLayout<Float>.stride,
+      index: 3
+    )
     
     if activeArea.isEmpty {
       activeArea = [[-1, -1]]

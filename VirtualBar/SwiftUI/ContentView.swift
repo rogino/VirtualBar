@@ -11,6 +11,9 @@ struct ContentView: View {
   var body: some View {
     VStack {
       MetalView()
+        .aspectRatio(16/9, contentMode: .fit)
+      ControlsView()
+        .padding()
     }
   }
 }

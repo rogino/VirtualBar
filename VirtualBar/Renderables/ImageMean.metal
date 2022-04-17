@@ -38,10 +38,23 @@ fragment float4 fragment_image_mean(
                
   if (in.texturePosition[0] < 0.1) return sobel * 5;
   if (in.texturePosition[0] > 0.9) return squash;
+  if (in.texturePosition[0] >= 0.1 && in.texturePosition[0] < 0.11) {
+    float val = dot(sobel, sobel) - 1;
+    return float4(0, val > threshold ? 1: 0, 0, 1);
+  }
   
   for (int i = 0; i < numActiveAreas; i++) {
     if (activeArea[i * 2] <= in.texturePosition[1] && in.texturePosition[1] <= activeArea[i * 2 + 1]) {
-      return mix(float4(1, i * 0.3, (i - 3) * 0.3, 0), original, i == 0 ? 0.3: 0.7);
+      return mix(
+        float4(
+          1,
+          saturate(2.0 * float(i) / numActiveAreas),
+          saturate(-0.5 + 2.0 * (float(i) / numActiveAreas)),
+          1
+        ),
+        original,
+        mix(0.3, 0.7, i/(numActiveAreas - 1))
+      );
     }
   }
   

@@ -162,10 +162,12 @@ class FingerDetector {
   }
   
   // Convert VN point point to float3, with z being confidence
-  func transform(_ point: VNRecognizedPoint) -> simd_float3 {
+  func transform(_ point: VNRecognizedPoint, yScale: Float = 1.0) -> simd_float3 {
     // Convert from [0, 1] to [-1, 1]
     let x: Float = Float(point.location.x) * 2 - 1
-    let y: Float = Float(point.location.y) * 2 - 1
+    // For y, 0 and 1 refer to the point within the areaOfInterest, which may be smaller than the image
+    // Hence, must scale to get it back into image coordinates
+    let y: Float = Float(point.location.y) * yScale * 2 - 1
     
     return simd_float3(x, y, point.confidence)
   }
@@ -179,6 +181,17 @@ class FingerDetector {
       options: [:]
     )
     
+    // Ignore area above active area - get rid of reflections being detected as hands
+    let first = ImageMean.activeArea.first ?? [-1, -1]
+    let yTex = first.x >= 0 ? max(0.0, first.x - 0.05) : 0.0 // Allow fingers to extend slightly above the active area
+    let yScale = 1.0 - yTex
+    handPoseRequest.regionOfInterest = CGRect(
+      x: 0.0,
+      y: 0, // y = 0 is the bottom
+      width: 1.0,
+      height: 1.0 - Double(yTex)
+    )
+    
     var points: [simd_float3] = []
     
     do {
@@ -190,24 +203,24 @@ class FingerDetector {
       for hand in results {
         let observation = hand
         
-//        for finger in observation.availableJointsGroupNames {
-//          let finger = try observation.recognizedPoints(finger)
-//          for joint in observation.availableJointNames {
-//            if let point = finger[joint] {
-//              points.append(transform(point))
-//            }
-//          }
-//        }
-        
-        let  indexFingerPoints = try observation.recognizedPoints(.indexFinger)
-        let middleFingerPoints = try observation.recognizedPoints(.middleFinger)
-        guard let  indexTipPoint =  indexFingerPoints[.indexTip],
-              let middleTipPoint = middleFingerPoints[.middleTip] else {
-          continue
+        for finger in observation.availableJointsGroupNames {
+          let finger = try observation.recognizedPoints(finger)
+          for joint in observation.availableJointNames {
+            if let point = finger[joint] {
+              points.append(transform(point, yScale: yScale))
+            }
+          }
         }
+        
+//        let  indexFingerPoints = try observation.recognizedPoints(.indexFinger)
+//        let middleFingerPoints = try observation.recognizedPoints(.middleFinger)
+//        guard let  indexTipPoint =  indexFingerPoints[.indexTip],
+//              let middleTipPoint = middleFingerPoints[.middleTip] else {
+//          continue
+//        }
 
-        points.append(transform(indexTipPoint))
-        points.append(transform(middleTipPoint))
+        points.append(transform(indexTipPoint, yScale: yScale))
+        points.append(transform(middleTipPoint, yScale: yScale))
       }
       
       return points

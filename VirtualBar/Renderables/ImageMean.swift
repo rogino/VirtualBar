@@ -41,7 +41,7 @@ public class ImageMean: Renderable {
     1.0, 1.0
   ]
   
-  var activeArea: [float2] = []
+  public static var activeArea: [float2] = []
     
   init() {
     let textureLoader = MTKTextureLoader(device: Renderer.device)
@@ -140,7 +140,7 @@ public class ImageMean: Renderable {
       return dot(float, float)
     }
 
-    activeArea = Self.detectActiveArea(
+    Self.activeArea = Self.detectActiveArea(
       sobelOutput: sobelOutputFloat,
       squashOutput: squashOutputFloat,
       threshold: Self.threshold,
@@ -297,18 +297,18 @@ public class ImageMean: Renderable {
       index: 3
     )
     
-    if activeArea.isEmpty {
-      activeArea = [[-1, -1]]
+    if Self.activeArea.isEmpty {
+      Self.activeArea = [[-1, -1]]
       // Dies if empty array passed. Not sure how to solve it
     }
     
     renderEncoder.setFragmentBytes(
-      &activeArea,
-      length: MemoryLayout<Float>.stride * 2 * activeArea.count,
+      &Self.activeArea,
+      length: MemoryLayout<float2>.stride * Self.activeArea.count,
       index: 4
     )
     
-    var count: Int = activeArea.count
+    var count: Int = Self.activeArea.count
     renderEncoder.setFragmentBytes(
       &count,
       length: MemoryLayout<Int>.stride,

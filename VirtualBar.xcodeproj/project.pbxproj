@@ -63,6 +63,7 @@
 		4F2035BA2802BC8100F89CAE /* Renderables */ = {
 			isa = PBXGroup;
 			children = (
+				4F2035BD2802BC8100F89CAE /* Renderable.swift */,
 				4F2035BB2802BC8100F89CAE /* ImageMean.metal */,
 				4F2035C12802BC8100F89CAE /* ImageMean.swift */,
 				4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */,
@@ -108,9 +109,8 @@
 				4FB88227280C1F3D009ADABB /* SwiftUI */,
 				4F2035C82802BC8100F89CAE /* Common.h */,
 				4F2035C92802BC8100F89CAE /* Helper.swift */,
-				4F2035BD2802BC8100F89CAE /* Renderable.swift */,
-				4F2035BA2802BC8100F89CAE /* Renderables */,
 				4F2035C72802BC8100F89CAE /* Renderer.swift */,
+				4F2035BA2802BC8100F89CAE /* Renderables */,
 				4F2035C62802BC8100F89CAE /* Shaders.metal */,
 				4FCB20AF2802BBA1003DC9BC /* Assets.xcassets */,
 				4FCB20B42802BBA1003DC9BC /* VirtualBar.entitlements */,

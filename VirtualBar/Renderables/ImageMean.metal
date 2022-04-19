@@ -21,6 +21,7 @@ vertex VertexOutImageMean vertex_image_mean(
   };
 }
 
+
 fragment float4 fragment_image_mean(
   const VertexOutImageMean in [[stage_in]],
   const texture2d<float> originalTexture [[texture(0)]],

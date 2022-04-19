@@ -198,7 +198,7 @@ public class ImageMean: Renderable {
       let t = 1 - distanceFromCenter
 //      let weight = halfDistributionCutoffTriangle(t: t)
       let weight = halfDistributionCutoffRect(t: t)
-      return current + arr[i] * weight
+      return current + arr[i] * arr[i] * weight
     } / Float(size)
   }
 

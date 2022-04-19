@@ -30,7 +30,7 @@ class Renderer: NSObject {
   
   public init(metalView: MTKView, device: MTLDevice) {
     metalView.device = device
-    metalView.clearColor = MTLClearColor(red: 0.5, green: 0, blue: 0, alpha: 1)
+    metalView.clearColor = MTLClearColor(red: 0, green: 0.4, blue: 0, alpha: 1)
 //    metalView.depthStencilPixelFormat = .depth32Float
     
     Self.aspect = Float(metalView.bounds.width)/Float(metalView.bounds.height)
@@ -48,7 +48,8 @@ class Renderer: NSObject {
     
 //    renderables.append(Sphere())
 //    renderables.append(Triangle())
-    renderables.append(ImageMean())
+//    renderables.append(ImageMean())
+    renderables.append(Straighten())
     renderables.append(FingerPointsRenderer())
   }
 
@@ -85,9 +86,13 @@ extension Renderer: MTKViewDelegate {
 //    renderEncoder.setDepthStencilState(depthStencilState)
     
     for renderable in renderables {
-      if cameraTexture != nil,
-         let imageMean = renderable as? ImageMean {
-        imageMean.texture = cameraTexture
+      if cameraTexture != nil {
+        if let imageMean = renderable as? ImageMean {
+          imageMean.texture = cameraTexture
+        }
+        if let straighten = renderable as? Straighten {
+          straighten.texture = cameraTexture
+        }
       }
       
       if let fingerPointsRenderer = renderable as? FingerPointsRenderer {

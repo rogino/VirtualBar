@@ -52,4 +52,13 @@ typedef struct {
   
   simd_float3x2 intrinsicK;
 } LensIntrinsics;
+
+
+typedef struct {
+  float thetaRange;
+  float thetaStep;
+  float rStep;
+  vector_int2 imageSize;
+  vector_int2 bufferSize;
+} HoughConfig;
 #endif /* Common_h */

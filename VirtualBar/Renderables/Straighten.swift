@@ -249,7 +249,8 @@ public class Straighten: Renderable {
     
     renderEncoder.setFragmentTexture(texture, index: 0)
     renderEncoder.setFragmentTexture(cannyTextureBuffer, index: 1)
-    renderEncoder.setFragmentTexture(houghTexture, index: 1)
+    renderEncoder.setFragmentTexture(houghTexture, index: 2)
+//    renderEncoder.setFragmentBuffer(houghTexture, offset: 0, index: 1)
     
     renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
   }

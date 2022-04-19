@@ -103,8 +103,8 @@ public class Straighten: Renderable {
     )
     
     let threadsPerGrid = MTLSize(
-      width: texture.width,
-      height: texture.height,
+      width: Int(houghConfig.bufferSize.x),
+      height: Int(houghConfig.bufferSize.y),
       depth: 1
     )
     

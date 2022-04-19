@@ -174,6 +174,34 @@ public class ImageMean: Renderable {
     return output
   }
   
+  static func triangleWeightedAverage(arr: [Float], min: Int, size: Int, minWeight: Float = 0) -> Float {
+    let radius = Float(size - 1) / 2
+    let center: Float = Float(min) + radius
+    
+    func halfDistributionTriangle(t: Float) -> Float {
+      // t in [0, 1], where 1 is the center of the distribution
+      return t * (1 - minWeight) + minWeight
+    }
+    
+    func halfDistributionCutoffTriangle(t: Float) -> Float {
+      let cutOff: Float = 0.2 // Ignore first and last 10% of the image
+      return halfDistributionTriangle(t: max(Float(0), t - cutOff))
+    }
+    
+    func halfDistributionCutoffRect(t: Float) -> Float {
+      let cutOff: Float = 0.2 // Ignore first and last 10% of the image
+      return t < cutOff ? 0: 1
+    }
+    
+    return (min..<min + size).makeIterator().reduce(0) { current, i in
+      let distanceFromCenter = abs(Float(i) - center) / radius
+      let t = 1 - distanceFromCenter
+//      let weight = halfDistributionCutoffTriangle(t: t)
+      let weight = halfDistributionCutoffRect(t: t)
+      return current + arr[i] * weight
+    } / Float(size)
+  }
+
   
   static func detectActiveArea(
     sobelOutput: [Float],
@@ -187,6 +215,7 @@ public class ImageMean: Renderable {
     // Idea: touch bar area is very smooth. Hence, find areas with a low derivative that are the correct height
     var current: (x: Int, size: Int) = (x: 0, size: 0)
     var possibleMatches: [(x: Int, size: Int)] = []
+    
     for (i, val) in sobelOutput.enumerated() {
       if val < threshold {
         current.size += 1
@@ -199,17 +228,23 @@ public class ImageMean: Renderable {
     }
     
     // Idea: key rows can get detected, so use the squash map to get the color of the area
-    // The active area will be the lightest area
+    // The active area will be the lightest area - keys are black while the body is grey,
+    // so this should prevent a key row from being detected as a false positive
     let coloredMatches = possibleMatches.map {
       return (
         x1: $0.x,
         x2: $0.x + $0.size,
-        color: squashOutput[$0.x + $0.size / 2]
-      )
+        color: squashOutput[$0.x + $0.size / 2],
+        weightedAverage: Self.triangleWeightedAverage(arr: sobelOutput, min: $0.x, size: $0.size)
+     )
     }
-      .sorted(by: { $0.color > $1.color })
-   
-    return coloredMatches.map {[
+     
+    let coloredSortedMatches = coloredMatches.sorted(by: { $0.color > $1.color })
+    
+    let weightSortedMatches = coloredMatches.sorted(by: { $0.weightedAverage < $1.weightedAverage })
+    
+    return weightSortedMatches.map {[
+//    return coloredSortedMatches.map {[
       Float($0.x1) / Float(sobelOutput.count),
       Float($0.x2) / Float(sobelOutput.count)
     ]}

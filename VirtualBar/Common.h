@@ -55,14 +55,6 @@ typedef struct {
 
 
 typedef struct {
-  float thetaRange;
-  float thetaStep;
-  float rStep;
-  vector_int2 imageSize;
-  vector_int2 bufferSize;
-} HoughConfig;
-
-typedef struct {
   ushort leftX; // left x coordinate of left section
   ushort rightX; // left x coordinate of right section
   ushort width;  // width of left and right sections

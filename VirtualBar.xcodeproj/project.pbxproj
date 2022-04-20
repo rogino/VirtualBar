@@ -26,6 +26,9 @@
 		4FCB20B02802BBA1003DC9BC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4FCB20AF2802BBA1003DC9BC /* Assets.xcassets */; };
 		4FCB20B32802BBA1003DC9BC /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4FCB20B22802BBA1003DC9BC /* Preview Assets.xcassets */; };
 		4FCB20BB2802BBAB003DC9BC /* MetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FCB20BA2802BBAB003DC9BC /* MetalView.swift */; };
+		4FD9CEBD28100F2500CF79E0 /* PlonkTexture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FD9CEBC28100F2500CF79E0 /* PlonkTexture.swift */; };
+		4FD9CEBF2810100B00CF79E0 /* PlonkTexture.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4FD9CEBE2810100B00CF79E0 /* PlonkTexture.metal */; };
+		4FD9CEC12810112E00CF79E0 /* PlonkTextureShared.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4FD9CEC02810112E00CF79E0 /* PlonkTextureShared.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,6 +54,9 @@
 		4FCB20B22802BBA1003DC9BC /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		4FCB20B42802BBA1003DC9BC /* VirtualBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VirtualBar.entitlements; sourceTree = "<group>"; };
 		4FCB20BA2802BBAB003DC9BC /* MetalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalView.swift; sourceTree = "<group>"; };
+		4FD9CEBC28100F2500CF79E0 /* PlonkTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlonkTexture.swift; sourceTree = "<group>"; };
+		4FD9CEBE2810100B00CF79E0 /* PlonkTexture.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PlonkTexture.metal; sourceTree = "<group>"; };
+		4FD9CEC02810112E00CF79E0 /* PlonkTextureShared.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PlonkTextureShared.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,8 +76,11 @@
 				4F2035BD2802BC8100F89CAE /* Renderable.swift */,
 				4F2035BB2802BC8100F89CAE /* ImageMean.metal */,
 				4F2035C12802BC8100F89CAE /* ImageMean.swift */,
+				4FD9CEBC28100F2500CF79E0 /* PlonkTexture.swift */,
 				4FB73A70280E9D5D00EE0311 /* Straighten.swift */,
 				4FB73A72280EA1A300EE0311 /* Straighten.metal */,
+				4FD9CEBE2810100B00CF79E0 /* PlonkTexture.metal */,
+				4FD9CEC02810112E00CF79E0 /* PlonkTextureShared.metal */,
 				4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */,
 				4F2035C02802BC8100F89CAE /* FingerPointsRenderer.swift */,
 				4F2035BF2802BC8100F89CAE /* Sphere.swift */,
@@ -204,6 +213,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4F2035CB2802BC8100F89CAE /* FingerPointsRenderer.metal in Sources */,
+				4FD9CEC12810112E00CF79E0 /* PlonkTextureShared.metal in Sources */,
 				4F2035CF2802BC8100F89CAE /* FingerPointsRenderer.swift in Sources */,
 				4FA7E4BD2802C182005AC971 /* ContentView.swift in Sources */,
 				4F2035CA2802BC8100F89CAE /* ImageMean.metal in Sources */,
@@ -211,8 +221,10 @@
 				4FCB20BB2802BBAB003DC9BC /* MetalView.swift in Sources */,
 				4F2035D02802BC8100F89CAE /* ImageMean.swift in Sources */,
 				4F2035CC2802BC8100F89CAE /* Renderable.swift in Sources */,
+				4FD9CEBD28100F2500CF79E0 /* PlonkTexture.swift in Sources */,
 				4F2035D72802BC8100F89CAE /* Helper.swift in Sources */,
 				4F2035D52802BC8100F89CAE /* Shaders.metal in Sources */,
+				4FD9CEBF2810100B00CF79E0 /* PlonkTexture.metal in Sources */,
 				4F2035D22802BC8100F89CAE /* Triangle.swift in Sources */,
 				4FCB20AC2802BBA0003DC9BC /* VirtualBarApp.swift in Sources */,
 				4F2035CE2802BC8100F89CAE /* Sphere.swift in Sources */,

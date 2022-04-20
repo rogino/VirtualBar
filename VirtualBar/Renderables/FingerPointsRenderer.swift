@@ -23,6 +23,7 @@ public class FingerPointsRenderer: Renderable {
   
   
   public func draw(renderEncoder: MTLRenderCommandEncoder) {
+    renderEncoder.pushDebugGroup("Fingers")
     renderEncoder.setRenderPipelineState(pipelineState)
     guard fingerPoints.count > 0 else { return }
     renderEncoder.setVertexBytes(
@@ -32,5 +33,6 @@ public class FingerPointsRenderer: Renderable {
     )
     renderEncoder.setTriangleFillMode(.lines)
     renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: fingerPoints.count)
+    renderEncoder.popDebugGroup()
   }
 }

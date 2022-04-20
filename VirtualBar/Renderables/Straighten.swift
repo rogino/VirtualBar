@@ -1,16 +1,14 @@
 import MetalKit
 import MetalPerformanceShaders
 
-public class Straighten: Renderable {
-  public var texture: MTLTexture!
-  
+public class Straighten {
   // this section of the left half of texture used in averaging. right is symmetrical
   var halfSampleTextureSize: (Float, Float) = (0.2, 0.4)
   
   // Max angle to correct
   var maxCorrectionAngleDegrees: Float = 4
   
-  func straightenParams(
+  func makeStraightenParams(
     textureWidth: Int
   ) -> StraightenParams {
     let halfSize = halfSampleTextureSize
@@ -40,6 +38,7 @@ public class Straighten: Renderable {
   var         deltaTexture: MTLTexture?
   var deltaAveragedTexture: MTLTexture?
   var deltaAveragedCPU: UnsafeMutablePointer<Float>?
+  var    straightenedImage: MTLTexture?
   
   var straightenCopyPSO: MTLComputePipelineState
   var straightenDeltaSquaredPSO: MTLComputePipelineState
@@ -52,29 +51,21 @@ public class Straighten: Renderable {
   var houghTexture: MTLTexture?
   var symmetryOutputBuffer: MTLBuffer?
   
-  let pipelineState: MTLRenderPipelineState
+  let straightenOutputPSO: MTLRenderPipelineState
   
     
   init() {
-    let textureLoader = MTKTextureLoader(device: Renderer.device)
-    do {
-      texture = try textureLoader.newTexture(
-        name: "test", // File in .xcassets texture set
-        scaleFactor: 1.0,
-        bundle: Bundle.main,
-        options: nil
-      )
-    } catch let error { fatalError(error.localizedDescription) }
-    pipelineState = Self.makePipeline()
+    straightenOutputPSO = Self.makeStraightenOutputPSO()
     straightenCopyPSO = Self.makeStraightenCopyPSO()
     straightenDeltaSquaredPSO = Self.makeStraightenDeltaSquaredPSO()
     rowSquashEncoder = MPSImageReduceRowMean(device: Renderer.device)
     colSquashEncoder = MPSImageReduceColumnMean(device: Renderer.device)
   }
   
+  
   static func makeStraightenCopyPSO() -> MTLComputePipelineState {
     do {
-      guard let function = Renderer.library.makeFunction(name: "copy_left_right_samples") else { fatalError() }
+      guard let function = Renderer.library.makeFunction(name: "straighten_copy_left_right_samples") else { fatalError() }
       return try Renderer.device.makeComputePipelineState(function: function)
     } catch {
       fatalError()
@@ -90,18 +81,48 @@ public class Straighten: Renderable {
     }
   }
   
+  static func makeStraightenOutputPSO() -> MTLRenderPipelineState {
+    let pipelineDescriptor = buildPartialPipelineDescriptor(
+      vertex: "vertex_plonk_texture",
+      fragment: "fragment_straighten"
+    )
+    do {
+      let pipelineState = try Renderer.device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+      return pipelineState
+    } catch let error { fatalError(error.localizedDescription) }
+  }
+  
+  static func makeStraightenRenderPassDescriptor(outputTexture: MTLTexture) -> MTLRenderPassDescriptor {
+    let renderPassDescriptor = MTLRenderPassDescriptor()
+    
+    let attachment = renderPassDescriptor.colorAttachments[0]
+    attachment?.texture = outputTexture
+    
+    attachment?.loadAction = .dontCare
+    attachment?.storeAction = .store
+    return renderPassDescriptor
+  }
   
   func makeTextureBuffers(texture: MTLTexture) throws {
-    let params = straightenParams(textureWidth: texture.width)
-    let pixelWidth = params.width
-    
     let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
       pixelFormat: texture.pixelFormat,
-      width: Int(pixelWidth),
+      width: texture.width,
       height: texture.height,
       mipmapped: false
     )
+    textureDescriptor.usage = [.shaderWrite, .shaderRead, .renderTarget]
+    
+    straightenedImage = Renderer.device.makeTexture(descriptor: textureDescriptor)
+    if straightenedImage == nil {
+      fatalError()
+    }
+    straightenedImage?.label = "Straightened image"
+    
+   
+    
     textureDescriptor.usage = [.shaderWrite, .shaderRead]
+    let params = makeStraightenParams(textureWidth: texture.width)
+    textureDescriptor.width = Int(params.width)
     
     leftSampleTexture  = Renderer.device.makeTexture(descriptor: textureDescriptor)
     rightSampleTexture = Renderer.device.makeTexture(descriptor: textureDescriptor)
@@ -227,15 +248,16 @@ public class Straighten: Renderable {
     commandBuffer.popDebugGroup()
   }
   
-  func straightenImage(image: MTLTexture) throws -> simd_float3x3 {
-    if leftSampleTexture == nil || leftSampleTexture!.height != image.height {
-      try makeTextureBuffers(texture: texture)
-    }
+  func determineStraightenTransform(image: MTLTexture) throws -> simd_float3x3 {
     guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer() else {
-      return simd_float3x3(1)
+      fatalError()
+    }
+    commandBuffer.label = "Determine straightening angle"
+    if leftSampleTexture == nil || leftSampleTexture!.height != image.height {
+      try makeTextureBuffers(texture: image)
     }
     
-    let params = straightenParams(textureWidth: texture.width)
+    let params = makeStraightenParams(textureWidth: image.width)
     straightenCopyLR(commandBuffer: commandBuffer, image: image, params: params)
     
     commandBuffer.pushDebugGroup("MPS row reduce")
@@ -326,41 +348,43 @@ public class Straighten: Renderable {
   }
   
   
-  static func makePipeline() -> MTLRenderPipelineState {
-    let pipelineDescriptor = buildPartialPipelineDescriptor(
-      vertex: "vertex_straighten",
-      fragment: "fragment_straighten"
-    )
-    do {
-      let pipelineState = try Renderer.device.makeRenderPipelineState(descriptor: pipelineDescriptor)
-      return pipelineState
-    } catch let error { fatalError(error.localizedDescription) }
-  }
   
-  
-  public func draw(renderEncoder: MTLRenderCommandEncoder) {
+  public func straighten(image: MTLTexture) -> MTLTexture {
+    guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer() else {
+      fatalError()
+    }
+    commandBuffer.label = "Straighten image"
+    
     var transform = float3x3(1) // identity
     do {
-      transform = try straightenImage(image: texture)
+      transform = try determineStraightenTransform(image: image)
     } catch {
       fatalError()
     }
-    renderEncoder.setRenderPipelineState(pipelineState)
+    commandBuffer.pushDebugGroup("Straighten image transform")
+    guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(
+      descriptor: Self.makeStraightenRenderPassDescriptor(outputTexture: straightenedImage!)
+    ) else { fatalError() }
+    
+    renderEncoder.setRenderPipelineState(straightenOutputPSO)
     
     renderEncoder.setTriangleFillMode(.fill)
     
-    renderEncoder.setFragmentTexture(texture, index: 0)
+    renderEncoder.setFragmentTexture(image, index: 0)
     renderEncoder.setFragmentBytes(
       &transform,
       length: MemoryLayout<simd_float3x3>.stride,
       index: 0
     )
-    renderEncoder.setFragmentTexture(leftAveragedTexture, index: 1)
-    renderEncoder.setFragmentTexture(rightAveragedTexture, index: 2)
-    renderEncoder.setFragmentTexture(deltaAveragedTexture, index: 3)
-//    renderEncoder.setFragmentTexture(deltaTexture, index: 3)
-//    renderEncoder.setFragmentBuffer(houghTexture, offset: 0, index: 1)
-    
     renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+    
+    renderEncoder.endEncoding()
+    commandBuffer.commit()
+//    let time = CFAbsoluteTimeGetCurrent()
+    commandBuffer.waitUntilCompleted()
+//    print("Straighten rendering took \(CFAbsoluteTimeGetCurrent() - time)")
+    commandBuffer.popDebugGroup()
+    
+    return straightenedImage!
   }
 }

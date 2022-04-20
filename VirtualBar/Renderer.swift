@@ -7,8 +7,10 @@ class Renderer: NSObject {
   static var commandQueue: MTLCommandQueue!
   static var library: MTLLibrary!
 
-//  let depthStencilState: MTLDepthStencilState
   var pipelineState: MTLRenderPipelineState!
+  
+  var straightener: Straighten
+  
   var renderables: [Renderable] = []
   
   let fingerDetector = FingerDetector()
@@ -18,6 +20,7 @@ class Renderer: NSObject {
   
   
   var cameraTexture: MTLTexture? = nil
+  var straightenedCameraTexture: MTLTexture? = nil
   
   var cameraTextureCache: CVMetalTextureCache?
 
@@ -39,7 +42,7 @@ class Renderer: NSObject {
     Self.library = device.makeDefaultLibrary()
     
 //    self.depthStencilState = Self.buildDepthStencilState()!
-    
+    self.straightener = Straighten()
     super.init()
     metalView.delegate = self
     
@@ -48,8 +51,8 @@ class Renderer: NSObject {
     
 //    renderables.append(Sphere())
 //    renderables.append(Triangle())
-//    renderables.append(ImageMean())
-    renderables.append(Straighten())
+    renderables.append(ImageMean())
+//    renderables.append(PlonkTexture())
     renderables.append(FingerPointsRenderer())
   }
 
@@ -82,16 +85,17 @@ extension Renderer: MTKViewDelegate {
       let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
         return
     }
+    commandBuffer.label = "Main command bufffer"
     
 //    renderEncoder.setDepthStencilState(depthStencilState)
     
     for renderable in renderables {
-      if cameraTexture != nil {
+      if straightenedCameraTexture != nil {
         if let imageMean = renderable as? ImageMean {
-          imageMean.texture = cameraTexture
+          imageMean.texture = straightenedCameraTexture
         }
-        if let straighten = renderable as? Straighten {
-          straighten.texture = cameraTexture
+        if let plonkTexture = renderable as? PlonkTexture {
+          plonkTexture.texture = straightenedCameraTexture
         }
       }
       
@@ -106,6 +110,7 @@ extension Renderer: MTKViewDelegate {
       return
     }
     commandBuffer.present(drawable)
+    
     commandBuffer.commit()
   }
 }
@@ -156,6 +161,7 @@ extension Renderer: AVCaptureVideoDataOutputSampleBufferDelegate {
     }
     
     self.cameraTexture = texture
+    self.straightenedCameraTexture = straightener.straighten(image: texture)
   }
 }
 

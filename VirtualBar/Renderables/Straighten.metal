@@ -8,36 +8,10 @@
 #include <metal_stdlib>
 using namespace metal;
 #import "./../Common.h"
+#import "./PlonkTextureShared.metal"
 
 
-  
-constant float2 fullScreenVertices[6] = {
-  float2(-1.0,  1.0),
-  float2( 1.0, -1.0),
-  float2(-1.0, -1.0),
-
-  float2(-1.0,  1.0),
-  float2( 1.0,  1.0),
-  float2( 1.0, -1.0)
-};
-
-constant float2 fullScreenTextureCoordinates[6] = {
-  float2(0.0, 0.0),
-  float2(1.0, 1.0),
-  float2(0.0, 1.0),
-
-  float2(0.0, 0.0),
-  float2(1.0, 0.0),
-  float2(1.0, 1.0)
-};
-
-struct VertexOutImageMean {
-  float4 position [[ position ]];
-  float2 texturePosition;
-};
-
-
-kernel void copy_left_right_samples(
+kernel void straighten_copy_left_right_samples(
   constant StraightenParams& config [[buffer(0)]],
   texture2d<half, access::read>  image [[texture(0)]],
   texture2d<half, access::write> left  [[texture(1)]],
@@ -88,34 +62,25 @@ kernel void straighten_left_right_delta_squared(
 }
 
 
-vertex VertexOutImageMean vertex_straighten(uint id [[vertex_id]]) {
-  return {
-    .position = float4(fullScreenVertices[id], 0, 1),
-    // Mirror the image
-    .texturePosition = float2(
-      1 - fullScreenTextureCoordinates[id].x,
-      fullScreenTextureCoordinates[id].y
-    )
-  };
-}
+
 
 fragment float4 fragment_straighten(
-  const VertexOutImageMean in [[stage_in]],
+  const VertexOutPlonkTexture in [[stage_in]],
   constant float3x3 &transform [[buffer(0)]],
-  const texture2d<float> originalTexture [[texture(0)]],
-  const texture2d<float> leftTexture [[texture(1)]],
-  const texture2d<float> rightTexture [[texture(2)]],
-  const texture2d<float> deltaAvgTexture [[texture(3)]]
+  const texture2d<float> originalTexture [[texture(0)]]
+//  const texture2d<float> leftTexture [[texture(1)]],
+//  const texture2d<float> rightTexture [[texture(2)]],
+//  const texture2d<float> deltaAvgTexture [[texture(3)]]
 ) {
   constexpr sampler textureSampler;
   
-  float2 pos = in.texturePosition;
-  if (pos.y < 0.5) {
-    pos = (transform * float3(in.texturePosition, 1)).xy;
-    pos.y *= 2;
-  } else {
-    pos.y = (pos.y * 2) - 1;
-  }
+  float2 pos = (transform * float3(in.texturePosition, 1)).xy;
+//  
+//  if (in.texturePosition.y < 0.5) {
+//    pos.y *= 2;
+//  } else {
+//    pos.y = (pos.y * 2) - 1;
+//  }
   float4 color = originalTexture.sample(textureSampler, pos);
   
   return color;

@@ -54,7 +54,6 @@ public class ImageMean: Renderable {
       )
     } catch let error { fatalError(error.localizedDescription) }
     pipelineState = Self.makePipeline()
-//    lineOfSymmetryPSO = Self.makeLineOfSymmetryPipeline()
   }
   
   
@@ -69,20 +68,12 @@ public class ImageMean: Renderable {
     
     guard let squashTextureBuffer = Renderer.device.makeTexture(descriptor: descriptor),
           let  sobelTextureBuffer = Renderer.device.makeTexture(descriptor: descriptor)
-    else {
-      fatalError()
-      
-    }
+    else { fatalError() }
+    
+    squashTextureBuffer.label = "Squash texture buffer"
+    sobelTextureBuffer.label = "Sobel texture buffer"
     self.squashTextureBuffer = squashTextureBuffer
     self.sobelTextureBuffer = sobelTextureBuffer
-    
-//    self.symmetryOutputBuffer = Renderer.device.makeBuffer(
-//      length: texture.height * MemoryLayout<Float>.stride,
-//      options: .storageModeShared
-//    )
-//    if (self.symmetryOutputBuffer == nil) {
-//      fatalError()
-//    }
     
     cpuImageColumnBuffer = UnsafeMutablePointer<SIMD4<UInt8>>.allocate(capacity: texture.height)
   }
@@ -91,10 +82,12 @@ public class ImageMean: Renderable {
     let startTime = CFAbsoluteTimeGetCurrent()
     guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer()
     else { fatalError() }
+    commandBuffer.label = "Active area detection"
     if squashTextureBuffer == nil || squashTextureBuffer?.height != texture.height {
       makeImageBuffers(texture: texture)
     }
 
+    commandBuffer.pushDebugGroup("MPS row reduce + sobel")
     let squashShader: MPSUnaryImageKernel = MPSImageReduceRowMean(device: Renderer.device)
     squashShader.encode(
       commandBuffer: commandBuffer,
@@ -109,10 +102,10 @@ public class ImageMean: Renderable {
       destinationTexture: sobelTextureBuffer!
     )
     
-//    detectLineOfSymmetry(commandBuffer: commandBuffer, sobelTextureBuffer: sobelTextureBuffer!);
     commandBuffer.commit()
     
     commandBuffer.waitUntilCompleted()
+    commandBuffer.popDebugGroup()
     // Squash + Sobel + simple symmetry compute: ~1.3 ms
 //    print("GPU Full Pipeline Duration:", CFAbsoluteTimeGetCurrent() - startTime)
     
@@ -263,47 +256,6 @@ public class ImageMean: Renderable {
     } catch let error { fatalError(error.localizedDescription) }
   }
   
-  
-//  static func makeLineOfSymmetryPipeline() -> MTLComputePipelineState {
-//    guard let function = Renderer.library.makeFunction(name: "line_of_symmetry") else {
-//      fatalError("Could not make line of symmetry compute function")
-//    }
-//    do {
-//      return try Renderer.device.makeComputePipelineState(function: function);
-//    } catch {
-//      print(error.localizedDescription)
-//      fatalError("Failed to create compute pipeline state for symmetry")
-//    }
-//  }
-//
-//  func detectLineOfSymmetry(commandBuffer: MTLCommandBuffer, sobelTextureBuffer: MTLTexture) {
-//    guard let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
-//      fatalError("Failed to create compute encoder for symmetry")
-//    }
-//
-//    computeEncoder.setComputePipelineState(lineOfSymmetryPSO)
-//    
-//    var args = LineOfSymmetryArgs(deadzone: 100);
-//
-//    computeEncoder.setTexture(sobelTextureBuffer, index: 0);
-//    computeEncoder.setBuffer(symmetryOutputBuffer, offset: 0, index: 0);
-//    computeEncoder.setBytes(&args, length: MemoryLayout<LineOfSymmetryArgs>.stride, index: 1);
-//
-//    let threadsPerGroup = MTLSize(
-//      width: min(lineOfSymmetryPSO.threadExecutionWidth, sobelTextureBuffer.height),
-//      height: 1,
-//      depth: 1
-//    )
-//
-//    let threadsPerGrid = MTLSize(width: sobelTextureBuffer.height, height: 1, depth: 1)
-//    // Optimization: set grid size to height - 2 * deadzone
-//    computeEncoder.dispatchThreads(
-//      threadsPerGrid,
-//      threadsPerThreadgroup: threadsPerGroup
-//    )
-//    computeEncoder.endEncoding()
-//  }
-//
   
   
   public func draw(renderEncoder: MTLRenderCommandEncoder) {

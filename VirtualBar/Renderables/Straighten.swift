@@ -45,24 +45,27 @@ public class Straighten: Renderable {
   var halfSampleTextureSize: (Float, Float) = (0.2, 0.4)
   
   func getPixelCoordinatesForHalfSample(
-    textureWidth: Int,
-    forLeft: Bool = true
-  ) -> (Int, Int) {
-    var halfSize = halfSampleTextureSize
-    if !forLeft {
-      halfSize = (1 - halfSize.0, 1 - halfSize.1)
-    }
-    return (
-      Int(floor(Float(textureWidth) * halfSize.0)),
-      Int( ceil(Float(textureWidth) * halfSize.1))
+    textureWidth: Int
+  ) -> CopyLeftRightConfig {
+    let halfSize = halfSampleTextureSize
+    
+    let leftLeft  = Int(floor(Float(textureWidth) * halfSize.0))
+    let leftRight = Int( ceil(Float(textureWidth) * halfSize.1))
+    let width = leftRight - leftLeft
+    
+    let rightLeft = Int(floor(Float(textureWidth) * (1 - halfSize.1)))
+    return CopyLeftRightConfig(
+      leftX: ushort(leftLeft),
+      rightX: ushort(rightLeft),
+      width: ushort(width)
     )
   }
   
   
-  var  leftSampleBuffer: MTLBuffer?
-  var rightSampleBuffer: MTLBuffer?
   var  leftSampleTexture: MTLTexture?
   var rightSampleTexture: MTLTexture?
+  var straightenCopyPSO: MTLComputePipelineState
+  
   
   var cannyTextureBuffer: MTLTexture?
   var houghOutputBuffer: MTLBuffer?
@@ -96,61 +99,33 @@ public class Straighten: Renderable {
       )
     } catch let error { fatalError(error.localizedDescription) }
     pipelineState = Self.makePipeline()
-//    houghComputePSO = Self.makeHoughComputePipeline()
+    straightenCopyPSO = Self.makeStraightenCopyPSO()
+//    MTLComm
 //    houghClearComputePSO = Self.makeHoughClearComputePipeline()
   }
   
-  
-  static let RGBA8UINT_BITS_PER_PIXEL: Int = 4
-  static func determineLeftRightSampleImageBufferWidth(
-    pixelWidth: Int,
-    pixelFormat: MTLPixelFormat
-  ) throws -> Int {
-    print(pixelFormat.rawValue)
-    assert([MTLPixelFormat.rgba8Uint, MTLPixelFormat.rgba8Unorm].contains(pixelFormat))
-    
-    func roundUp(n: Int, alignment: Int) -> Int {
-      return ((n + alignment - 1) / alignment) * alignment;
+  static func makeStraightenCopyPSO() -> MTLComputePipelineState {
+    do {
+      guard let function = Renderer.library.makeFunction(name: "copy_left_right_samples") else { fatalError() }
+      return try Renderer.device.makeComputePipelineState(function: function)
+    } catch {
+      fatalError()
     }
-    
-    let bitsPerPixel = Self.RGBA8UINT_BITS_PER_PIXEL
-    let alignment = Renderer.device.minimumLinearTextureAlignment(for: pixelFormat)
-    
-    let bytesPerRow = bitsPerPixel * pixelWidth
-    let alignedBytesPerRow = roundUp(n: bytesPerRow, alignment: alignment)
-    if (alignedBytesPerRow % bitsPerPixel != 0) {
-      throw fatalError()
-    }
-    return alignedBytesPerRow / bitsPerPixel
   }
+  
   
   func makeLeftRightSampleImageBuffers(texture: MTLTexture) throws {
     let pixelRange = getPixelCoordinatesForHalfSample(textureWidth: texture.width)
-    let pixelWidth = pixelRange.1 - pixelRange.0
-    
-    let alignedPixelWidth = try Self.determineLeftRightSampleImageBufferWidth(
-      pixelWidth: pixelWidth,
-      pixelFormat: texture.pixelFormat
-    )
-    let bitsPerPixel = Self.RGBA8UINT_BITS_PER_PIXEL
-    let bytesPerBuffer = bitsPerPixel * alignedPixelWidth * texture.height
-    
-    leftSampleBuffer = Renderer.device.makeBuffer(length: bytesPerBuffer)
-    rightSampleBuffer = Renderer.device.makeBuffer(length: bytesPerBuffer)
-    if leftSampleBuffer == nil || rightSampleBuffer == nil {
-      fatalError()
-    }
-    leftSampleBuffer?.label = "Left sample buffer"
-    rightSampleBuffer?.label = "Right sample buffer"
+    let pixelWidth = pixelRange.width
     
     let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
       pixelFormat: texture.pixelFormat,
-      width: alignedPixelWidth,
+//      pixelFormat: .rgba16Float,
+      width: Int(pixelWidth),
       height: texture.height,
       mipmapped: false
     )
-    textureDescriptor.storageMode = leftSampleBuffer!.storageMode
-//    textureDescriptor.usage = [.shaderWrite, .shaderRead]
+    textureDescriptor.usage = [.shaderWrite, .shaderRead]
     
     leftSampleTexture  = Renderer.device.makeTexture(descriptor: textureDescriptor)
     rightSampleTexture = Renderer.device.makeTexture(descriptor: textureDescriptor)
@@ -163,51 +138,52 @@ public class Straighten: Renderable {
     rightSampleTexture?.label = "Right sample texture"
   }
   
-  func straightenImage(image: MTLTexture) throws {
-    guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer(),
-          let encoder = commandBuffer.makeBlitCommandEncoder(
-            descriptor: MTLBlitPassDescriptor()
-          ) else { fatalError() }
-    
+  func straightenImage(/*commandBuffer: MTLCommandBuffer, */image: MTLTexture) throws {
+//          let encoder = commandBuffer.makeBlitCommandEncoder(
+//            descriptor: MTLBlitPassDescriptor()
+//          ) else { fatalError() }
+//
     if leftSampleTexture == nil || leftSampleTexture!.height != image.height {
       try makeLeftRightSampleImageBuffers(texture: texture)
     }
+    guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer() else {
+      return
+    }
     
-    var pixelRange = getPixelCoordinatesForHalfSample(
-      textureWidth: texture.width,
-      forLeft: true
+    guard let computeEncoder = commandBuffer.makeComputeCommandEncoder()
+        else { return }
+        
+    var config = getPixelCoordinatesForHalfSample(textureWidth: image.width)
+    computeEncoder.setComputePipelineState(straightenCopyPSO)
+    computeEncoder.setBytes(
+      &config,
+      length: MemoryLayout<CopyLeftRightConfig>.stride,
+      index: 0
     )
     
-    let size = MTLSize(width: pixelRange.1 - pixelRange.0, height: texture.height, depth: 1)
-    encoder.copy(
-      from: image,
-      sourceSlice: 0,
-      sourceLevel: 0,
-      sourceOrigin: MTLOrigin(x: pixelRange.0, y: 0, z: 0),
-      sourceSize: size,
-      to: leftSampleBuffer!,
-      destinationOffset: 0,
-      destinationBytesPerRow: texture.bufferBytesPerRow,
-      destinationBytesPerImage: texture.allocatedSize
+    computeEncoder.setTexture(image, index: 0)
+    computeEncoder.setTexture(leftSampleTexture, index: 1)
+    computeEncoder.setTexture(rightSampleTexture, index: 2)
+    
+    let threadsPerThreadgroup = MTLSize(
+      width: min(
+        Int(config.width),
+        straightenCopyPSO.maxTotalThreadsPerThreadgroup
+      ),
+      height: 1,
+      depth: 1
     )
     
-    pixelRange = getPixelCoordinatesForHalfSample(
-      textureWidth: texture.width,
-      forLeft: false
+    computeEncoder.dispatchThreads(
+      MTLSize(
+        width: image.height,
+        height: 2,
+        depth: 1
+      ),
+      threadsPerThreadgroup: threadsPerThreadgroup
     )
-    encoder.copy(
-      from: image,
-      sourceSlice: 0,
-      sourceLevel: 0,
-      sourceOrigin: MTLOrigin(x: pixelRange.0, y: 0, z: 0),
-      sourceSize: size,
-      to: leftSampleBuffer!,
-      destinationOffset: 0,
-      destinationBytesPerRow: leftSampleTexture!.bufferBytesPerRow,
-      destinationBytesPerImage: leftSampleTexture!.allocatedSize
-    )
-    
-    encoder.endEncoding()
+
+    computeEncoder.endEncoding()
     commandBuffer.commit()
     commandBuffer.waitUntilCompleted()
   }

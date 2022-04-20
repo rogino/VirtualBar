@@ -37,6 +37,31 @@ struct VertexOutImageMean {
 };
 
 
+kernel void copy_left_right_samples(
+  constant CopyLeftRightConfig& config [[buffer(0)]],
+  texture2d<half, access::read> image [[texture(0)]],
+  texture2d<half, access::write> left [[texture(1)]],
+  texture2d<half, access::write> right [[texture(2)]],
+                                    
+  ushort2 pid [[thread_position_in_grid]]
+) {
+  ushort y = pid.x;
+  bool isLeft = pid.y == 0;
+  
+  texture2d<half, access::write> output = isLeft ? left: right;
+  for(ushort x = 0; x < config.width; x++) {
+    output.write(
+//                 half4(1),
+//                 ushort2(x, y)
+      image.read(ushort2(
+        (isLeft ? config.leftX: config.rightX) + x,
+        y
+      )),
+      ushort2(x, y)
+    );
+  }
+}
+
 kernel void kernel_hough_clear(
   constant HoughConfig& houghConfig [[buffer(0)]],
   device short* output [[buffer(1)]],
@@ -113,7 +138,7 @@ fragment float4 fragment_straighten(
     return leftTexture.sample(textureSampler, pos);
   } else {
     pos.x = (pos.x * 2) - 1;
-    return leftTexture.sample(textureSampler, pos);
+    return rightTexture.sample(textureSampler, pos);
   }
 //  ushort4 houghSample = houghTexture.sample(s2, in.texturePosition);
 //  houghSample = houghTexture.read(ushort2(20, 10));

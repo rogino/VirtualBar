@@ -61,4 +61,10 @@ typedef struct {
   vector_int2 imageSize;
   vector_int2 bufferSize;
 } HoughConfig;
+
+typedef struct {
+  ushort leftX;
+  ushort rightX;
+  ushort width;
+} CopyLeftRightConfig;
 #endif /* Common_h */

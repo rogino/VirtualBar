@@ -18,7 +18,6 @@ class Renderer: NSObject {
   
   static var aspect: Float = 1.0
   
-  
   var cameraTexture: MTLTexture? = nil
   var straightenedCameraTexture: MTLTexture? = nil
   

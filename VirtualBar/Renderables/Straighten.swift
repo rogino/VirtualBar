@@ -8,6 +8,9 @@ public class Straighten {
   // Max angle to correct
   var maxCorrectionAngleDegrees: Float = 4
   
+  static var enableStraightening: Bool = true
+  static var detectedAngle: String = ""
+  
   func makeStraightenParams(
     textureWidth: Int
   ) -> StraightenParams {
@@ -291,6 +294,7 @@ public class Straighten {
     Self.copyTexture(source: deltaAveragedTexture!, destination: deltaAveragedCPU!)
     let averageDelta = Self.copyPixelsToArray(source: deltaAveragedCPU!, length: deltaTexture!.width)
     let angle = calculateCorrectionAngle(avgDelta: averageDelta, params: params)
+    Self.detectedAngle = String(format: "%.1f", angle * 180 / Float.pi)
     
     return createRotationMatrix(angle: angle)
   }
@@ -350,6 +354,10 @@ public class Straighten {
   
   
   public func straighten(image: MTLTexture) -> MTLTexture {
+    if !Self.enableStraightening {
+      return image
+    }
+    
     guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer() else {
       fatalError()
     }

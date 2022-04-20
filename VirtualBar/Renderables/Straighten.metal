@@ -72,7 +72,7 @@ fragment float4 fragment_straighten(
 //  const texture2d<float> rightTexture [[texture(2)]],
 //  const texture2d<float> deltaAvgTexture [[texture(3)]]
 ) {
-  constexpr sampler textureSampler;
+  constexpr sampler textureSampler(filter::linear);
   
   float2 pos = (transform * float3(in.texturePosition, 1)).xy;
 //  

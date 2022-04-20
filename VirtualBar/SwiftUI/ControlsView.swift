@@ -11,12 +11,31 @@ struct ControlsView: View {
   @State var minSize: Float = ImageMean.activeAreaHeightFractionRange.lowerBound
   @State var maxSize: Float = ImageMean.activeAreaHeightFractionRange.upperBound
   @State var threshold: Float = ImageMean.threshold
+  @State var enableStraightening: Bool = Straighten.enableStraightening
+  
+  let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+  @State var straighteningAngle = ""
+
   
   var range: ClosedRange<Float> = 0.001...0.100
   var thresholdRange: ClosedRange<Float> = 0.001...0.200
   
     var body: some View {
       VStack {
+        HStack {
+          Toggle("Enable Straightening", isOn: $enableStraightening)
+            .onChange(of: enableStraightening) { _ in
+              DispatchQueue.main.async {
+                Straighten.enableStraightening.toggle()
+              }
+            }
+          if enableStraightening {
+            Text(straighteningAngle)
+              .onReceive(timer) { _ in
+                straighteningAngle = Straighten.detectedAngle
+              }
+          }
+        }
         HStack {
           Text("Threshold")
           Spacer()

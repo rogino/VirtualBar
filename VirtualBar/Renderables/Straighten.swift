@@ -51,6 +51,7 @@ public class Straighten: Renderable {
   
   let pipelineState: MTLRenderPipelineState
   let houghComputePSO: MTLComputePipelineState
+  let houghClearComputePSO: MTLComputePipelineState
   var threshold: Float = 0
   
   var houghConfig = HoughConfig(
@@ -74,6 +75,7 @@ public class Straighten: Renderable {
     } catch let error { fatalError(error.localizedDescription) }
     pipelineState = Self.makePipeline()
     houghComputePSO = Self.makeHoughComputePipeline()
+    houghClearComputePSO = Self.makeHoughClearComputePipeline()
   }
   
   
@@ -85,31 +87,50 @@ public class Straighten: Renderable {
       fatalError()
     }
   }
+  
+  static func makeHoughClearComputePipeline() -> MTLComputePipelineState {
+    do {
+      let function = Renderer.library.makeFunction(name: "kernel_hough_clear")!
+      return try Renderer.device.makeComputePipelineState(function: function)
+    } catch {
+      fatalError()
+    }
+  }
+
 
 
   func runHough(commandBuffer: MTLCommandBuffer, texture: MTLTexture) {
     commandBuffer.pushDebugGroup("Hough")
     guard let computeEncoder = commandBuffer.makeComputeCommandEncoder()
     else { return }
-    computeEncoder.setComputePipelineState(houghComputePSO)
-    computeEncoder.setBytes(&houghConfig, length: MemoryLayout<HoughConfig>.stride, index: 0)
-    computeEncoder.setBuffer(houghOutputBuffer, offset: 0, index: 1)
-    computeEncoder.setTexture(texture, index: 0)
-    
     let threadsPerGroup = MTLSize(
       width: houghComputePSO.threadExecutionWidth,
       height: houghComputePSO.maxTotalThreadsPerThreadgroup / houghComputePSO.threadExecutionWidth,
       depth: 1
     )
     
-    let threadsPerGrid = MTLSize(
-      width: texture.width,
-      height: texture.height,
-      depth: 1
+    computeEncoder.setComputePipelineState(houghClearComputePSO)
+    computeEncoder.setBytes(&houghConfig, length: MemoryLayout<HoughConfig>.stride, index: 0)
+    computeEncoder.setBuffer(houghOutputBuffer, offset: 0, index: 1)
+    computeEncoder.dispatchThreads(
+      MTLSize(
+        width: Int(houghConfig.bufferSize.x),
+        height: Int(houghConfig.bufferSize.y),
+        depth: 1
+      ),
+      threadsPerThreadgroup: threadsPerGroup
     )
     
+    
+    computeEncoder.setComputePipelineState(houghComputePSO)
+    computeEncoder.setTexture(texture, index: 0)
+    
     computeEncoder.dispatchThreads(
-      threadsPerGrid,
+      MTLSize(
+        width: texture.width,
+        height: texture.height,
+        depth: 1
+      ),
       threadsPerThreadgroup: threadsPerGroup
     )
     

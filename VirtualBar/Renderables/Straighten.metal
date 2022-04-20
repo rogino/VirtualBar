@@ -34,9 +34,17 @@ constant float2 fullScreenTextureCoordinates[6] = {
 struct VertexOutImageMean {
   float4 position [[ position ]];
   float2 texturePosition;
-  
 };
 
+
+kernel void kernel_hough_clear(
+  constant HoughConfig& houghConfig [[buffer(0)]],
+  device short* output [[buffer(1)]],
+  uint2 id [[thread_position_in_grid]]
+) {
+  int index = id.y * houghConfig.bufferSize.x + id.x;
+  output[index] = 0;
+}
 
 kernel void kernel_hough(
   constant HoughConfig& houghConfig [[buffer(0)]],
@@ -57,16 +65,17 @@ kernel void kernel_hough(
 //  }
 //  return;
 
-//  half4 sample = inputImage.read(id);
-//  if (sample.r <= 0) return;
+  half4 sample = inputImage.read(id);
+  if (sample.r <= 0) return;
   // https://stackoverflow.com/questions/59442566/optimize-metal-compute-shader-for-image-histogram
-  for(float i = -houghConfig.thetaRange; i < houghConfig.thetaRange + 0.01; i += houghConfig.thetaStep) {
+  for(float t = -houghConfig.thetaRange; t < houghConfig.thetaRange + 0.01; t += houghConfig.thetaStep) {
     // https://docs.opencv.org/3.4/d9/db0/tutorial_hough_lines.html
-    float r = id.x * cos(i) + id.y + sin(i);
+    float r = id.x * cos(t) + id.y + sin(t);
     int r_int = clamp(int(round(r)), 0, houghConfig.bufferSize.y);
-    int i_int = clamp(int(round(i)), 0, houghConfig.bufferSize.x);
-    uint position = houghConfig.bufferSize.x * r_int + i_int;
-    output[position] += 1;
+    int t_int = clamp(int(round(t)), 0, houghConfig.bufferSize.x);
+    uint position = houghConfig.bufferSize.x * r_int + t_int;
+//    threadgroup_barrier(
+    output[position] = 10;
     
 //    output[position] += 1;
 //    atomic_fetch_add_explicit(&(output[position]), 1, memory_order_relaxed);
@@ -98,7 +107,7 @@ fragment float4 fragment_straighten(
   constexpr sampler s2(coord::pixel);
 //  return cannyTexture.sample(textureSampler, in.texturePosition);
   
-  ushort4 houghSample = houghTexture.sample(s2, float2(10, 10));
+  ushort4 houghSample = houghTexture.sample(s2, in.texturePosition);
 //  houghSample = houghTexture.read(ushort2(20, 10));
-  return float4(float3(houghSample.x == 0 ? 0 : 1), 1);
+  return float4(float3(houghSample.x), 1);
 }

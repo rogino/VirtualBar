@@ -298,9 +298,18 @@ public class Straighten: Renderable {
     
     Self.copyTexture(source: deltaAveragedTexture!, destination: deltaAveragedCPU!)
     let averageDelta = Self.copyPixelsToArray(source: deltaAveragedCPU!, length: deltaTexture!.width)
-    print(averageDelta)
+    let angle = calculateCorrectionAngle(avgDelta: averageDelta, params: params)
   }
   
+  func calculateCorrectionAngle(avgDelta: [Float], params: StraightenParams) -> Float {
+    let dx = Float(params.rightX - params.leftX)
+    let sortedAngles: [(angle: Float, delta: Float)] = avgDelta.enumerated().map { (i, delta) in
+      let dy: Float = Float(params.offsetMin) + Float(i)
+      let angle = atan2(-dy, dx)
+      return (angle: angle, delta: delta)
+    }.sorted(by: { $0.delta < $1.delta })
+    return sortedAngles.first!.angle
+  }
 
   // Copies image from MTLTexture to a CPU buffer with the correct amount of memory allocated
   static func copyTexture<T>(source: MTLTexture, destination: UnsafeMutablePointer<T>) {
@@ -354,8 +363,8 @@ public class Straighten: Renderable {
     renderEncoder.setFragmentTexture(texture, index: 0)
     renderEncoder.setFragmentTexture(leftAveragedTexture, index: 1)
     renderEncoder.setFragmentTexture(rightAveragedTexture, index: 2)
-    renderEncoder.setFragmentTexture(deltaAveragedTexture, index: 3)
-//    renderEncoder.setFragmentTexture(deltaTexture, index: 3)
+//    renderEncoder.setFragmentTexture(deltaAveragedTexture, index: 3)
+    renderEncoder.setFragmentTexture(deltaTexture, index: 3)
 //    renderEncoder.setFragmentBuffer(houghTexture, offset: 0, index: 1)
     
     renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)

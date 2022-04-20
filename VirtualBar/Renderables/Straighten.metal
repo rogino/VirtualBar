@@ -162,8 +162,8 @@ fragment float4 fragment_straighten(
   
   float2 pos = in.texturePosition;
   float4 avg = deltaAvgTexture.sample(textureSampler, pos);
-  avg /= 100;
-  avg.w = 1;
+//  avg /= 100;
+//  avg.w = 1;
   return avg;
 //  if (in.texturePosition.x < 0.5) {
 //      pos.x *= 2;

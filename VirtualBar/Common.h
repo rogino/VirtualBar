@@ -63,10 +63,10 @@ typedef struct {
 } HoughConfig;
 
 typedef struct {
-  ushort leftX;
-  ushort rightX;
-  ushort width;
-  short offsetMin;
-  short offsetMax;
+  ushort leftX; // left x coordinate of left section
+  ushort rightX; // left x coordinate of right section
+  ushort width;  // width of left and right sections
+  short offsetMin; // largest negative y offset
+  short offsetMax; // largest positiev y offset
 } StraightenParams;
 #endif /* Common_h */

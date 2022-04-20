@@ -44,41 +44,34 @@ kernel void kernel_hough(
   device short* output [[buffer(1)]],
   uint2 id [[thread_position_in_grid]]
 ) {
-  // https://docs.opencv.org/3.4/d9/db0/tutorial_hough_lines.html
-  // One thread per r-theta pair
-  int index = id.y * houghConfig.bufferSize.x + id.x;
-  ushort2 coord = ushort2(id.x % houghConfig.imageSize.x, id.y % houghConfig.imageSize.y);
-//  output[index] = inputImage.read(coord).r;
-//
+//  constexpr sampler imageSampler(coord::pixel);
+//  ushort4 sample = inputImage.sample(imageSampler, float2(id));
+//  if (id.x < houghConfig.bufferSize.x && id.y < houghConfig.bufferSize.y) {
+//    output[id.y * houghConfig.bufferSize.x + id.x] = 255;
+//  }
 //  return;
-  float r = id.y * houghConfig.rStep;
-  float t = (id.x - houghConfig.bufferSize.x / 2) * houghConfig.thetaStep; // theta
-  
-  // TODO: generate equation to find min/max x such that y remains within [0, image.size.y)
-  float cosT = cos(t);
-  float sinT = sin(t);
   
   
-  
-  ushort sum = 0;
-  for(int x = 0; x < houghConfig.imageSize.x; x++) {
-    float y_frac = -x/tan(t) + r/sin(t);
-    int y = 0;
-    if (fract(y_frac) < 0.2) {
-      y = int(y_frac);
-    } else if (fract(y_frac) > 0.8) {
-      y = int(y_frac + 1);
-    } else {
-      return;
-    }
+//  for (int i = 0; i < 10000; i++) {
+//    output[i] = 255;
+//  }
+//  return;
+
+//  half4 sample = inputImage.read(id);
+//  if (sample.r <= 0) return;
+  // https://stackoverflow.com/questions/59442566/optimize-metal-compute-shader-for-image-histogram
+  for(float i = -houghConfig.thetaRange; i < houghConfig.thetaRange + 0.01; i += houghConfig.thetaStep) {
+    // https://docs.opencv.org/3.4/d9/db0/tutorial_hough_lines.html
+    float r = id.x * cos(i) + id.y + sin(i);
+    int r_int = clamp(int(round(r)), 0, houghConfig.bufferSize.y);
+    int i_int = clamp(int(round(i)), 0, houghConfig.bufferSize.x);
+    uint position = houghConfig.bufferSize.x * r_int + i_int;
+    output[position] += 1;
     
-    if (y < 0 || y > houghConfig.bufferSize.y) {
-      return;
-    }
-    
-    sum += inputImage.read(ushort2(x, y)).x > 0;
+//    output[position] += 1;
+//    atomic_fetch_add_explicit(&(output[position]), 1, memory_order_relaxed);
+//  https://stackoverflow.com/questions/57742654/non-atomic-parallel-reduction-with-metal
   }
-  output[index] = sum;
 }
 
 
@@ -102,11 +95,10 @@ fragment float4 fragment_straighten(
   const texture2d<ushort> houghTexture [[texture(2)]]
 ) {
   constexpr sampler textureSampler;
-//  constexpr sampler s2(coord::pixel);
+  constexpr sampler s2(coord::pixel);
 //  return cannyTexture.sample(textureSampler, in.texturePosition);
-  ushort4 houghSample = houghTexture.sample(textureSampler, in.texturePosition);
   
-//  ushort4 houghSample = houghTexture.sample(s2, float2(10, 10));
+  ushort4 houghSample = houghTexture.sample(s2, float2(10, 10));
 //  houghSample = houghTexture.read(ushort2(20, 10));
-  return float4(float3(houghSample.x) / 30, 1);
+  return float4(float3(houghSample.x == 0 ? 0 : 1), 1);
 }

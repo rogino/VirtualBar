@@ -38,9 +38,9 @@ struct VertexOutImageMean {
 
 
 kernel void copy_left_right_samples(
-  constant CopyLeftRightConfig& config [[buffer(0)]],
-  texture2d<half, access::read> image [[texture(0)]],
-  texture2d<half, access::write> left [[texture(1)]],
+  constant StraightenParams& config [[buffer(0)]],
+  texture2d<half, access::read>  image [[texture(0)]],
+  texture2d<half, access::write> left  [[texture(1)]],
   texture2d<half, access::write> right [[texture(2)]],
                                     
   ushort2 pid [[thread_position_in_grid]]
@@ -60,6 +60,33 @@ kernel void copy_left_right_samples(
       ushort2(x, y)
     );
   }
+}
+
+kernel void straighten_left_right_delta_squared(
+  constant StraightenParams& config     [[buffer(0)]],
+  texture2d<float, access::write> delta    [[texture(0)]],
+  texture2d<half,  access::read>  leftAvg  [[texture(1)]],
+  texture2d<half,  access::read>  rightAvg [[texture(2)]],
+                                    
+  ushort2 pid [[thread_position_in_grid]]
+) {
+  ushort yLeft = pid.x;
+  short i = config.offsetMin + short(pid.y);
+  short yRight = yLeft - i;
+  
+  if (short(delta.get_height()) <= yLeft  ||
+      short(delta.get_height()) <= yRight || yRight < 0
+  ) {
+    return;
+  }
+  
+  half4 left  =  leftAvg.read(ushort2(0, yLeft ));
+  half4 right = rightAvg.read(ushort2(0, yRight));
+  float4 diff = float4(left - right);
+  diff.w = 0;
+  float deltaSqured = dot(diff, diff) / 3; // 3 components so divide by 3 to cap to 1
+  
+  delta.write(deltaSqured, pid.yx); // y is image y axis, x is i
 }
 
 kernel void kernel_hough_clear(
@@ -126,20 +153,25 @@ fragment float4 fragment_straighten(
   const VertexOutImageMean in [[stage_in]],
   const texture2d<float> originalTexture [[texture(0)]],
   const texture2d<float> leftTexture [[texture(1)]],
-  const texture2d<float> rightTexture [[texture(2)]]
+  const texture2d<float> rightTexture [[texture(2)]],
+  const texture2d<float> deltaAvgTexture [[texture(3)]]
 ) {
   constexpr sampler textureSampler;
 //  constexpr sampler s2(coord::pixel);
 //  return cannyTexture.sample(textureSampler, in.texturePosition);
   
   float2 pos = in.texturePosition;
-  if (in.texturePosition.x < 0.5) {
-      pos.x *= 2;
-    return leftTexture.sample(textureSampler, pos);
-  } else {
-    pos.x = (pos.x * 2) - 1;
-    return rightTexture.sample(textureSampler, pos);
-  }
+  float4 avg = deltaAvgTexture.sample(textureSampler, pos);
+  avg /= 100;
+  avg.w = 1;
+  return avg;
+//  if (in.texturePosition.x < 0.5) {
+//      pos.x *= 2;
+//    return leftTexture.sample(textureSampler, pos);
+//  } else {
+//    pos.x = (pos.x * 2) - 1;
+//    return rightTexture.sample(textureSampler, pos);
+//  }
 //  ushort4 houghSample = houghTexture.sample(s2, in.texturePosition);
 //  houghSample = houghTexture.read(ushort2(20, 10));
 //  return float4(float3(houghSample.x), 1);

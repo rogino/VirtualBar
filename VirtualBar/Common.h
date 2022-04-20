@@ -66,5 +66,7 @@ typedef struct {
   ushort leftX;
   ushort rightX;
   ushort width;
-} CopyLeftRightConfig;
+  short offsetMin;
+  short offsetMax;
+} StraightenParams;
 #endif /* Common_h */

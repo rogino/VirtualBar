@@ -100,14 +100,22 @@ vertex VertexOutImageMean vertex_straighten(
 fragment float4 fragment_straighten(
   const VertexOutImageMean in [[stage_in]],
   const texture2d<float> originalTexture [[texture(0)]],
-  const texture2d<float> cannyTexture [[texture(1)]],
-  const texture2d<ushort> houghTexture [[texture(2)]]
+  const texture2d<float> leftTexture [[texture(1)]],
+  const texture2d<float> rightTexture [[texture(2)]]
 ) {
   constexpr sampler textureSampler;
-  constexpr sampler s2(coord::pixel);
+//  constexpr sampler s2(coord::pixel);
 //  return cannyTexture.sample(textureSampler, in.texturePosition);
   
-  ushort4 houghSample = houghTexture.sample(s2, in.texturePosition);
+  float2 pos = in.texturePosition;
+  if (in.texturePosition.x < 0.5) {
+      pos.x *= 2;
+    return leftTexture.sample(textureSampler, pos);
+  } else {
+    pos.x = (pos.x * 2) - 1;
+    return leftTexture.sample(textureSampler, pos);
+  }
+//  ushort4 houghSample = houghTexture.sample(s2, in.texturePosition);
 //  houghSample = houghTexture.read(ushort2(20, 10));
-  return float4(float3(houghSample.x), 1);
+//  return float4(float3(houghSample.x), 1);
 }

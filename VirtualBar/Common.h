@@ -61,4 +61,5 @@ typedef struct {
   short offsetYMin; // largest negative y offset
   short offsetYMax; // largest positiev y offset
 } StraightenParams;
+
 #endif /* Common_h */

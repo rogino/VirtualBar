@@ -8,15 +8,14 @@
 #include <metal_stdlib>
 using namespace metal;
 
-#ifndef PlonkTexture_metal
-#define PlonkTexture_metal
-
+#ifndef PlonkTextureShared_metal
+#define PlonkTextureShared_metal
 
 struct VertexOutPlonkTexture {
   float4 position [[ position ]];
   float2 texturePosition;
 };
-  
+
 constant float2 fullScreenVertices[6] = {
   float2(-1.0,  1.0),
   float2( 1.0, -1.0),

@@ -13,14 +13,19 @@ using namespace metal;
 vertex VertexOutPlonkTexture vertex_plonk_texture(uint id [[vertex_id]]) {
   return {
     .position = float4(fullScreenVertices[id], 0, 1),
+    .texturePosition = fullScreenTextureCoordinates[id]
+  };
+}
+
+vertex VertexOutPlonkTexture vertex_plonk_texture_mirrored_horizontal(uint id [[vertex_id]]) {
+  return {
+    .position = float4(fullScreenVertices[id], 0, 1),
     .texturePosition = float2(
-      // Mirror the image? 1 - coord[id].y
-      fullScreenTextureCoordinates[id].x,
+      1 - fullScreenTextureCoordinates[id].x,
       fullScreenTextureCoordinates[id].y
     )
   };
 }
-
 
 fragment float4 fragment_plonk_texture(
   const VertexOutPlonkTexture in [[stage_in]],

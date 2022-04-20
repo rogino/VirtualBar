@@ -21,26 +21,6 @@ public class ImageMean: Renderable {
 //  let lineOfSymmetryPSO: MTLComputePipelineState
   var threshold: Float = 0
   
-  var vertices: [Float] = [
-    -1.0,  1.0,
-     1.0, -1.0,
-    -1.0, -1.0,
-     
-    -1.0,  1.0,
-     1.0,  1.0,
-     1.0, -1.0
-  ]
-
-  var textureCoordinates: [Float] = [
-    0.0, 0.0,
-    1.0, 1.0,
-    0.0, 1.0,
-    
-    0.0, 0.0,
-    1.0, 0.0,
-    1.0, 1.0
-  ]
-  
   public static var activeArea: [float2] = []
     
   init() {
@@ -247,7 +227,7 @@ public class ImageMean: Renderable {
   
   static func makePipeline() -> MTLRenderPipelineState {
     let pipelineDescriptor = buildPartialPipelineDescriptor(
-      vertex: "vertex_image_mean",
+      vertex: "vertex_plonk_texture_mirrored_horizontal",
       fragment: "fragment_image_mean"
     )
     do {
@@ -263,18 +243,6 @@ public class ImageMean: Renderable {
     renderEncoder.setRenderPipelineState(pipelineState)
     
     renderEncoder.setTriangleFillMode(.fill)
-    renderEncoder.setVertexBytes(
-      &vertices,
-      length: MemoryLayout<Float>.stride * vertices.count,
-      index: 0
-    )
-    renderEncoder.setVertexBytes(
-      &textureCoordinates,
-      length: MemoryLayout<Float>.stride * textureCoordinates.count,
-      index: 1
-    )
-    renderEncoder.setFragmentTexture(texture, index: 0)
-    
     renderEncoder.setFragmentTexture(squashTextureBuffer, index: 1)
     renderEncoder.setFragmentTexture(sobelTextureBuffer, index: 2)
     
@@ -288,6 +256,9 @@ public class ImageMean: Renderable {
       Self.activeArea = [[-1, -1]]
       // Dies if empty array passed. Not sure how to solve it
     }
+    
+    renderEncoder.setFragmentTexture(texture, index: 0)
+        
     
     renderEncoder.setFragmentBytes(
       &Self.activeArea,
@@ -303,6 +274,6 @@ public class ImageMean: Renderable {
     )
    
     
-    renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertices.count / 2)
+    renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
   }
 }

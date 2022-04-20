@@ -142,8 +142,8 @@ public class Straighten {
     if leftAveragedTexture == nil || rightAveragedTexture == nil {
       fatalError()
     }
-    leftSampleTexture?.label = "Left averaged sample texture"
-    rightSampleTexture?.label = "Right averaged sample texture"
+    leftAveragedTexture?.label = "Left averaged sample texture"
+    rightAveragedTexture?.label = "Right averaged sample texture"
     
     // range(i) x image height
     textureDescriptor.pixelFormat = .r16Float // HALF

@@ -1,47 +1,14 @@
 import MetalKit
 import MetalPerformanceShaders
 
-func toRad(deg: Float) -> Float {
-  return deg * Float.pi / 180
-}
-
-
-extension HoughConfig {
-  mutating func updateBufferSize(pixelFormat: MTLPixelFormat) throws {
-//  https://stackoverflow.com/questions/62449741/how-to-set-up-byte-alignment-from-a-mtlbuffer-to-a-2d-mtltexture
-    let alignment = Renderer.device.minimumLinearTextureAlignment(for: pixelFormat)
-    
-    func roundUp(n: Int, alignment: Int) -> Int {
-      return ((n + alignment - 1) / alignment) * alignment;
-    }
-    var width = Int(ceil(length(float2(imageSize)) / rStep))
-    if (pixelFormat == .r16Uint) {
-      let bitsPerPixel = MemoryLayout<UInt16>.stride
-      let bytesPerRow = bitsPerPixel * width
-      let alignedBytesPerRow = roundUp(n: bytesPerRow, alignment: alignment)
-      if (alignedBytesPerRow % bitsPerPixel != 0) {
-        throw fatalError()
-      }
-      width = alignedBytesPerRow / bitsPerPixel
-    } else {
-      throw fatalError()
-    }
-    
-    bufferSize = SIMD2<Int32>(
-      Int32(width),
-      Int32(ceil(2 * thetaRange / thetaStep))
-    )
-  }
-}
-
 public class Straighten: Renderable {
   public var texture: MTLTexture!
   
   // this section of the left half of texture used in averaging. right is symmetrical
   var halfSampleTextureSize: (Float, Float) = (0.2, 0.4)
   
-  // number of pixel offsets to check in each direction
-  var maxOffset = 50
+  // Max angle to correct
+  var maxCorrectionAngleDegrees: Float = 4
   
   func straightenParams(
     textureWidth: Int
@@ -53,12 +20,16 @@ public class Straighten: Renderable {
     let width = leftRight - leftLeft
     
     let rightLeft = Int(floor(Float(textureWidth) * (1 - halfSize.1)))
+    
+    let deltaBetweenCenters = Float(rightLeft - leftLeft)
+    let maxYOffset = max(1, tan(maxCorrectionAngleDegrees * Float.pi / 180) * deltaBetweenCenters)
+     
     return StraightenParams(
       leftX: ushort(leftLeft),
       rightX: ushort(rightLeft),
       width: ushort(width),
-      offsetMin: Int16(-maxOffset),
-      offsetMax: Int16( maxOffset)
+      offsetYMin: Int16(-maxYOffset),
+      offsetYMax: Int16( maxYOffset)
     )
   }
   
@@ -153,10 +124,9 @@ public class Straighten: Renderable {
     leftSampleTexture?.label = "Left averaged sample texture"
     rightSampleTexture?.label = "Right averaged sample texture"
     
-    
     // range(i) x image height
     textureDescriptor.pixelFormat = .r16Float // HALF
-    textureDescriptor.width = Int(params.offsetMax - params.offsetMin)
+    textureDescriptor.width = Int(1 + params.offsetYMax - params.offsetYMin) // symmetrical around offset y=0
     deltaTexture = Renderer.device.makeTexture(descriptor: textureDescriptor)
     
     if deltaTexture == nil {
@@ -247,7 +217,7 @@ public class Straighten: Renderable {
     computeEncoder.dispatchThreads(
       MTLSize(
         width: image.height,
-        height: Int(params.offsetMax - params.offsetMin), // Each thread calculates a single delta with a given offset
+        height: Int(1 + params.offsetYMax - params.offsetYMin), // Each thread calculates a single delta with a given offset. + 1 as zero offset is calculated as well
         depth: 1
       ),
       threadsPerThreadgroup: threadsPerThreadgroup
@@ -257,12 +227,12 @@ public class Straighten: Renderable {
     commandBuffer.popDebugGroup()
   }
   
-  func straightenImage(image: MTLTexture) throws {
+  func straightenImage(image: MTLTexture) throws -> simd_float3x3 {
     if leftSampleTexture == nil || leftSampleTexture!.height != image.height {
       try makeTextureBuffers(texture: texture)
     }
     guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer() else {
-      return
+      return simd_float3x3(1)
     }
     
     let params = straightenParams(textureWidth: texture.width)
@@ -299,16 +269,34 @@ public class Straighten: Renderable {
     Self.copyTexture(source: deltaAveragedTexture!, destination: deltaAveragedCPU!)
     let averageDelta = Self.copyPixelsToArray(source: deltaAveragedCPU!, length: deltaTexture!.width)
     let angle = calculateCorrectionAngle(avgDelta: averageDelta, params: params)
+    
+    return createRotationMatrix(angle: angle)
   }
   
   func calculateCorrectionAngle(avgDelta: [Float], params: StraightenParams) -> Float {
     let dx = Float(params.rightX - params.leftX)
     let sortedAngles: [(angle: Float, delta: Float)] = avgDelta.enumerated().map { (i, delta) in
-      let dy: Float = Float(params.offsetMin) + Float(i)
+      let dy: Float = Float(params.offsetYMin) + Float(i)
       let angle = atan2(-dy, dx)
       return (angle: angle, delta: delta)
     }.sorted(by: { $0.delta < $1.delta })
     return sortedAngles.first!.angle
+  }
+  
+  func createRotationMatrix(angle: Float) -> simd_float3x3 {
+    let rotation = float3x3(rows: [
+      [cos(angle), -sin(angle), 0],
+      [sin(angle),  cos(angle), 0],
+      [        0,            0, 1]
+    ])
+    
+    let translation = float3x3(rows: [
+      [1, 0, 0.5],
+      [0, 1, 0.5],
+      [0, 0, 1  ]
+    ])
+    
+    return translation * rotation * translation.inverse
   }
 
   // Copies image from MTLTexture to a CPU buffer with the correct amount of memory allocated
@@ -351,8 +339,9 @@ public class Straighten: Renderable {
   
   
   public func draw(renderEncoder: MTLRenderCommandEncoder) {
+    var transform = float3x3(1) // identity
     do {
-      try straightenImage(image: texture)
+      transform = try straightenImage(image: texture)
     } catch {
       fatalError()
     }
@@ -361,10 +350,15 @@ public class Straighten: Renderable {
     renderEncoder.setTriangleFillMode(.fill)
     
     renderEncoder.setFragmentTexture(texture, index: 0)
+    renderEncoder.setFragmentBytes(
+      &transform,
+      length: MemoryLayout<simd_float3x3>.stride,
+      index: 0
+    )
     renderEncoder.setFragmentTexture(leftAveragedTexture, index: 1)
     renderEncoder.setFragmentTexture(rightAveragedTexture, index: 2)
-//    renderEncoder.setFragmentTexture(deltaAveragedTexture, index: 3)
-    renderEncoder.setFragmentTexture(deltaTexture, index: 3)
+    renderEncoder.setFragmentTexture(deltaAveragedTexture, index: 3)
+//    renderEncoder.setFragmentTexture(deltaTexture, index: 3)
 //    renderEncoder.setFragmentBuffer(houghTexture, offset: 0, index: 1)
     
     renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)

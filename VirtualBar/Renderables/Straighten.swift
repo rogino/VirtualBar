@@ -6,7 +6,10 @@ public class Straighten {
   var halfSampleTextureSize: (Float, Float) = (0.2, 0.4)
   
   // Max angle to correct
-  var maxCorrectionAngleDegrees: Float = 4
+  var maxCorrectionAngleDegrees: Float = 2
+  
+  
+  var movingAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 20, initialValue: 0.0)
   
   static var enableStraightening: Bool = true
   static var detectedAngle: String = ""
@@ -294,9 +297,13 @@ public class Straighten {
     Self.copyTexture(source: deltaAveragedTexture!, destination: deltaAveragedCPU!)
     let averageDelta = Self.copyPixelsToArray(source: deltaAveragedCPU!, length: deltaTexture!.width)
     let angle = calculateCorrectionAngle(avgDelta: averageDelta, params: params)
-    Self.detectedAngle = String(format: "%.1f", angle * 180 / Float.pi)
     
-    return createRotationMatrix(angle: angle)
+    movingAverage.input(angle)
+    
+    let averagedAngle = movingAverage.output()
+    Self.detectedAngle = String(format: "%.1f", averagedAngle * 180 / Float.pi)
+    
+    return createRotationMatrix(angle: averagedAngle)
   }
   
   func calculateCorrectionAngle(avgDelta: [Float], params: StraightenParams) -> Float {

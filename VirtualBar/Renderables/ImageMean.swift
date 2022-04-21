@@ -7,7 +7,7 @@ public typealias float2 = SIMD2<Float>
 public class ImageMean: Renderable {
   public var texture: MTLTexture!
   public static var threshold: Float = 0.03
-  public static var activeAreaHeightFractionRange: ClosedRange<Float> = 0.04...0.053
+  public static var activeAreaHeightFractionRange: ClosedRange<Float> = 0.04...0.06
   
   var computedTexture: MTLTexture!
   

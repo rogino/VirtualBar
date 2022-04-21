@@ -216,6 +216,19 @@ public class ImageMean: Renderable {
     
     let weightSortedMatches = coloredMatches.sorted(by: { $0.weightedAverage < $1.weightedAverage })
     
+    // Sum the color and weight indexes, find the lowest
+    let indexWeighted: [(combinedWeight: Int, colorIndex: Int)] = coloredSortedMatches.enumerated().map { (i, val) in
+      let weightIndex = weightSortedMatches.firstIndex(where: { $0.x1 == val.x1 })!
+      print(i, weightIndex)
+      return (combinedWeight: i + weightIndex, colorIndex: i)
+    }.sorted(by: { $0.combinedWeight < $1.combinedWeight })
+    
+    return indexWeighted.map {[
+//    return coloredSortedMatches.map {[
+      Float(coloredSortedMatches[$0.colorIndex].x1) / Float(sobelOutput.count),
+      Float(coloredSortedMatches[$0.colorIndex].x2) / Float(sobelOutput.count)
+    ]}
+    
     return weightSortedMatches.map {[
 //    return coloredSortedMatches.map {[
       Float($0.x1) / Float(sobelOutput.count),

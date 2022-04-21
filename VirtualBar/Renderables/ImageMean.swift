@@ -116,10 +116,9 @@ public class ImageMean: Renderable {
       return dot(float, float)
     }
 
-    Self.activeArea = Self.detectActiveArea(
+    Self.activeArea = ActiveAreaDetector.detectCandidateAreas(
       sobelOutput: sobelOutputFloat,
       squashOutput: squashOutputFloat,
-      squashOutput4UInt8: squashOutput4UInt8,
       threshold: Self.threshold,
       sizeRange: Self.activeAreaHeightFractionRange
     )
@@ -151,109 +150,7 @@ public class ImageMean: Renderable {
     return output
   }
   
-  static func triangleWeightedAverage(arr: [Float], min: Int, size: Int, minWeight: Float = 0) -> Float {
-    let radius = Float(size - 1) / 2
-    let center: Float = Float(min) + radius
-    
-    func halfDistributionTriangle(t: Float) -> Float {
-      // t in [0, 1], where 1 is the center of the distribution
-      return t * (1 - minWeight) + minWeight
-    }
-    
-    func halfDistributionCutoffTriangle(t: Float) -> Float {
-      let cutOff: Float = 0.2 // Ignore first and last 10% of the image
-      return halfDistributionTriangle(t: max(Float(0), t - cutOff))
-    }
-    
-    func halfDistributionCutoffRect(t: Float) -> Float {
-      let cutOff: Float = 0.2 // Ignore first and last 10% of the image
-      return t < cutOff ? 0: 1
-    }
-    
-    return (min..<min + size).makeIterator().reduce(0) { current, i in
-      let distanceFromCenter = abs(Float(i) - center) / radius
-      let t = 1 - distanceFromCenter
-//      let weight = halfDistributionCutoffTriangle(t: t)
-      let weight = halfDistributionCutoffRect(t: t)
-      return current + arr[i] * arr[i] * weight
-    } / Float(size)
-  }
-
-  
-  struct CandidateArea {
-    let x1: Int
-    let size: Int
-    var x2: Int { x1 + size }
-    
-    let centerColor: Float
-    let weightedAveragedDerivative: Float
-    var ranking: Int
-  }
-  
-  static func detectActiveArea(
-    sobelOutput: [Float],
-    squashOutput: [Float],
-    squashOutput4UInt8: [SIMD4<UInt8>],
-    threshold: Float,
-    sizeRange sizeRangeFraction: ClosedRange<Float>
-  ) -> [float2] {
-    let imageHeight: Float = Float(sobelOutput.count)
-    let sizeRange = Int(floor(sizeRangeFraction.lowerBound * imageHeight))...Int(ceil(sizeRangeFraction.upperBound * imageHeight))
-   
-    var current: (x: Int, size: Int) = (x: 0, size: 0)
-    var candidateMatches: [CandidateArea] = []
-    
-    // Idea: touch bar area is very smooth. Hence, find areas with a low derivative that are the correct height
-    for (i, val) in sobelOutput.enumerated() {
-      if val < threshold {
-        current.size += 1
-      } else {
-        if sizeRange.contains(current.size) {
-          candidateMatches.append(CandidateArea(
-            x1: current.x,
-            size: current.size,
-            // Idea: key rows can get detected, so use the squash map to get the color of the area
-            // The active area will be the lightest area - keys are black while the body is grey,
-            // so this should prevent a key row from being detected as a false positive
-            centerColor: squashOutput[current.x + current.size / 2],
-            // Idea: use weighted derivative quantify amount of variance
-            weightedAveragedDerivative: Self.triangleWeightedAverage(arr: sobelOutput, min: current.x, size: current.size),
-            ranking: -1
-          ))
-        }
-        current = (x: i, size: 0)
-      }
-    }
-    
-    
-    let colorSortedMatches = candidateMatches.sorted(by: { $0.centerColor > $1.centerColor })
-    let weightSortedMatches = candidateMatches.sorted(by: { $0.weightedAveragedDerivative < $1.weightedAveragedDerivative })
-    
-    // Sum the color and weight indexes, find the lowest
-    let indexWeighted: [(weightIndex: Int, colorIndex: Int, sum: Int)] = colorSortedMatches.enumerated().map { (i, val) in
-      let weightIndex = weightSortedMatches.firstIndex(where: { $0.x1 == val.x1 })!
-      return (weightIndex: weightIndex, colorIndex: i, sum: weightIndex + i)
-    }.sorted(by: { $0.sum == $1.sum ? $0.colorIndex < $1.colorIndex : $0.sum < $1.sum }) // Prefer color over weight
-    
-    candidateMatches = indexWeighted.enumerated().map {
-      var match = colorSortedMatches[$1.colorIndex]
-      match.ranking = $0
-      return match
-    }
-    
-    return candidateMatches.map {[
-      Float($0.x1) / Float(sobelOutput.count),
-      Float($0.x2) / Float(sobelOutput.count)
-    ]}
-//
-//    return weightSortedMatches.map {[
-////    return coloredSortedMatches.map {[
-//      Float($0.x1) / Float(sobelOutput.count),
-//      Float($0.x2) / Float(sobelOutput.count)
-//    ]}
-  }
-  
-    
+ 
   
   static func makePipeline() -> MTLRenderPipelineState {
     let pipelineDescriptor = buildPartialPipelineDescriptor(

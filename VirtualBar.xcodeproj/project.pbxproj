@@ -18,6 +18,8 @@
 		4F2035D52802BC8100F89CAE /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035C62802BC8100F89CAE /* Shaders.metal */; };
 		4F2035D62802BC8100F89CAE /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035C72802BC8100F89CAE /* Renderer.swift */; };
 		4F2035D72802BC8100F89CAE /* Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035C92802BC8100F89CAE /* Helper.swift */; };
+		4F33FE1628115F800035937D /* ActiveAreaSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F33FE1528115F800035937D /* ActiveAreaSelector.swift */; };
+		4F33FE18281160690035937D /* ActiveAreaDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F33FE17281160690035937D /* ActiveAreaDetector.swift */; };
 		4F52CA162810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F52CA142810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift */; };
 		4F52CA172810E0E100EEB655 /* MovingAverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F52CA152810E0E100EEB655 /* MovingAverage.swift */; };
 		4FA7E4BD2802C182005AC971 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA7E4BC2802C182005AC971 /* ContentView.swift */; };
@@ -46,6 +48,8 @@
 		4F2035C72802BC8100F89CAE /* Renderer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Renderer.swift; path = VirtualBar/Renderer.swift; sourceTree = SOURCE_ROOT; };
 		4F2035C82802BC8100F89CAE /* Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Common.h; path = VirtualBar/Common.h; sourceTree = SOURCE_ROOT; };
 		4F2035C92802BC8100F89CAE /* Helper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Helper.swift; path = VirtualBar/Helper.swift; sourceTree = SOURCE_ROOT; };
+		4F33FE1528115F800035937D /* ActiveAreaSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ActiveAreaSelector.swift; path = VirtualBar/ActiveAreaSelector.swift; sourceTree = SOURCE_ROOT; };
+		4F33FE17281160690035937D /* ActiveAreaDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveAreaDetector.swift; sourceTree = "<group>"; };
 		4F52CA142810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExponentialWeightedMovingAverage.swift; sourceTree = "<group>"; };
 		4F52CA152810E0E100EEB655 /* MovingAverage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MovingAverage.swift; sourceTree = "<group>"; };
 		4FA7E4BC2802C182005AC971 /* ContentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -80,6 +84,8 @@
 				4F2035BD2802BC8100F89CAE /* Renderable.swift */,
 				4F2035BB2802BC8100F89CAE /* ImageMean.metal */,
 				4F2035C12802BC8100F89CAE /* ImageMean.swift */,
+				4F33FE1528115F800035937D /* ActiveAreaSelector.swift */,
+				4F33FE17281160690035937D /* ActiveAreaDetector.swift */,
 				4FD9CEBC28100F2500CF79E0 /* PlonkTexture.swift */,
 				4FB73A70280E9D5D00EE0311 /* Straighten.swift */,
 				4FB73A72280EA1A300EE0311 /* Straighten.metal */,
@@ -228,6 +234,7 @@
 			files = (
 				4F2035CB2802BC8100F89CAE /* FingerPointsRenderer.metal in Sources */,
 				4F52CA172810E0E100EEB655 /* MovingAverage.swift in Sources */,
+				4F33FE18281160690035937D /* ActiveAreaDetector.swift in Sources */,
 				4FD9CEC12810112E00CF79E0 /* PlonkTextureShared.metal in Sources */,
 				4F2035CF2802BC8100F89CAE /* FingerPointsRenderer.swift in Sources */,
 				4FA7E4BD2802C182005AC971 /* ContentView.swift in Sources */,
@@ -235,6 +242,7 @@
 				4FB73A71280E9D5D00EE0311 /* Straighten.swift in Sources */,
 				4FCB20BB2802BBAB003DC9BC /* MetalView.swift in Sources */,
 				4F2035D02802BC8100F89CAE /* ImageMean.swift in Sources */,
+				4F33FE1628115F800035937D /* ActiveAreaSelector.swift in Sources */,
 				4F2035CC2802BC8100F89CAE /* Renderable.swift in Sources */,
 				4F52CA162810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift in Sources */,
 				4FD9CEBD28100F2500CF79E0 /* PlonkTexture.swift in Sources */,

@@ -6,7 +6,7 @@ public typealias float2 = SIMD2<Float>
 
 public class ImageMean: Renderable {
   public var texture: MTLTexture!
-  public static var threshold: Float = 0.03
+  public static var threshold: Float = 0.02
   public static var activeAreaHeightFractionRange: ClosedRange<Float> = 0.04...0.06
   
   var computedTexture: MTLTexture!
@@ -103,10 +103,13 @@ public class ImageMean: Renderable {
     }
     
     Self.copyTexture(source: squashTextureBuffer!, destination: cpuImageColumnBuffer!)
-    let squashOutputFloat: [Float] = Self.copyPixelsToArray(
+    
+    let squashOutput4UInt8: [SIMD4<UInt8>] = Self.copyPixelsToArray(
       source: cpuImageColumnBuffer!,
       length: texture.height
-    ).map {
+    )
+    
+    let squashOutputFloat: [Float] = squashOutput4UInt8.map {
       var float: SIMD4<Float> = SIMD4<Float>($0)
       float.w = 0
       float /= 255
@@ -116,6 +119,7 @@ public class ImageMean: Renderable {
     Self.activeArea = Self.detectActiveArea(
       sobelOutput: sobelOutputFloat,
       squashOutput: squashOutputFloat,
+      squashOutput4UInt8: squashOutput4UInt8,
       threshold: Self.threshold,
       sizeRange: Self.activeAreaHeightFractionRange
     )
@@ -176,64 +180,77 @@ public class ImageMean: Renderable {
   }
 
   
+  struct CandidateArea {
+    let x1: Int
+    let size: Int
+    var x2: Int { x1 + size }
+    
+    let centerColor: Float
+    let weightedAveragedDerivative: Float
+    var ranking: Int
+  }
+  
   static func detectActiveArea(
     sobelOutput: [Float],
     squashOutput: [Float],
+    squashOutput4UInt8: [SIMD4<UInt8>],
     threshold: Float,
     sizeRange sizeRangeFraction: ClosedRange<Float>
   ) -> [float2] {
     let imageHeight: Float = Float(sobelOutput.count)
     let sizeRange = Int(floor(sizeRangeFraction.lowerBound * imageHeight))...Int(ceil(sizeRangeFraction.upperBound * imageHeight))
    
-    // Idea: touch bar area is very smooth. Hence, find areas with a low derivative that are the correct height
     var current: (x: Int, size: Int) = (x: 0, size: 0)
-    var possibleMatches: [(x: Int, size: Int)] = []
+    var candidateMatches: [CandidateArea] = []
     
+    // Idea: touch bar area is very smooth. Hence, find areas with a low derivative that are the correct height
     for (i, val) in sobelOutput.enumerated() {
       if val < threshold {
         current.size += 1
       } else {
         if sizeRange.contains(current.size) {
-          possibleMatches.append(current)
+          candidateMatches.append(CandidateArea(
+            x1: current.x,
+            size: current.size,
+            // Idea: key rows can get detected, so use the squash map to get the color of the area
+            // The active area will be the lightest area - keys are black while the body is grey,
+            // so this should prevent a key row from being detected as a false positive
+            centerColor: squashOutput[current.x + current.size / 2],
+            // Idea: use weighted derivative quantify amount of variance
+            weightedAveragedDerivative: Self.triangleWeightedAverage(arr: sobelOutput, min: current.x, size: current.size),
+            ranking: -1
+          ))
         }
         current = (x: i, size: 0)
       }
     }
     
-    // Idea: key rows can get detected, so use the squash map to get the color of the area
-    // The active area will be the lightest area - keys are black while the body is grey,
-    // so this should prevent a key row from being detected as a false positive
-    let coloredMatches = possibleMatches.map {
-      return (
-        x1: $0.x,
-        x2: $0.x + $0.size,
-        color: squashOutput[$0.x + $0.size / 2],
-        weightedAverage: Self.triangleWeightedAverage(arr: sobelOutput, min: $0.x, size: $0.size)
-     )
-    }
-     
-    let coloredSortedMatches = coloredMatches.sorted(by: { $0.color > $1.color })
     
-    let weightSortedMatches = coloredMatches.sorted(by: { $0.weightedAverage < $1.weightedAverage })
+    let colorSortedMatches = candidateMatches.sorted(by: { $0.centerColor > $1.centerColor })
+    let weightSortedMatches = candidateMatches.sorted(by: { $0.weightedAveragedDerivative < $1.weightedAveragedDerivative })
     
     // Sum the color and weight indexes, find the lowest
-    let indexWeighted: [(combinedWeight: Int, colorIndex: Int)] = coloredSortedMatches.enumerated().map { (i, val) in
+    let indexWeighted: [(weightIndex: Int, colorIndex: Int, sum: Int)] = colorSortedMatches.enumerated().map { (i, val) in
       let weightIndex = weightSortedMatches.firstIndex(where: { $0.x1 == val.x1 })!
-      print(i, weightIndex)
-      return (combinedWeight: i + weightIndex, colorIndex: i)
-    }.sorted(by: { $0.combinedWeight < $1.combinedWeight })
+      return (weightIndex: weightIndex, colorIndex: i, sum: weightIndex + i)
+    }.sorted(by: { $0.sum == $1.sum ? $0.colorIndex < $1.colorIndex : $0.sum < $1.sum }) // Prefer color over weight
     
-    return indexWeighted.map {[
-//    return coloredSortedMatches.map {[
-      Float(coloredSortedMatches[$0.colorIndex].x1) / Float(sobelOutput.count),
-      Float(coloredSortedMatches[$0.colorIndex].x2) / Float(sobelOutput.count)
-    ]}
+    candidateMatches = indexWeighted.enumerated().map {
+      var match = colorSortedMatches[$1.colorIndex]
+      match.ranking = $0
+      return match
+    }
     
-    return weightSortedMatches.map {[
-//    return coloredSortedMatches.map {[
+    return candidateMatches.map {[
       Float($0.x1) / Float(sobelOutput.count),
       Float($0.x2) / Float(sobelOutput.count)
     ]}
+//
+//    return weightSortedMatches.map {[
+////    return coloredSortedMatches.map {[
+//      Float($0.x1) / Float(sobelOutput.count),
+//      Float($0.x2) / Float(sobelOutput.count)
+//    ]}
   }
   
     

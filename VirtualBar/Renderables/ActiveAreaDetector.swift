@@ -39,11 +39,8 @@ public class ActiveAreaDetector {
     sobelOutput: [Float],
     squashOutput: [Float],
     threshold: Float,
-    sizeRange sizeRangeFraction: ClosedRange<Float>
-  ) -> [float2] {
-    let imageHeight: Float = Float(sobelOutput.count)
-    let sizeRange = Int(floor(sizeRangeFraction.lowerBound * imageHeight))...Int(ceil(sizeRangeFraction.upperBound * imageHeight))
-   
+    sizeRange: ClosedRange<Int>
+  ) -> [CandidateArea] {
     var current: (x: Int, size: Int) = (x: 0, size: 0)
     var candidateMatches: [CandidateArea] = []
     
@@ -85,10 +82,8 @@ public class ActiveAreaDetector {
       return match
     }
     
-    return candidateMatches.map {[
-      Float($0.x1) / Float(sobelOutput.count),
-      Float($0.x2) / Float(sobelOutput.count)
-    ]}
+    return candidateMatches
+    
   //
   //    return weightSortedMatches.map {[
   ////    return coloredSortedMatches.map {[

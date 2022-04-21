@@ -6,7 +6,6 @@
 //
 
 public class ExponentialWeightedMovingAverage: MovingAverage {
-  
   private let alpha: Double
   private let invalidUntilNSamples: UInt16
   private let initialValue: Float
@@ -24,12 +23,6 @@ public class ExponentialWeightedMovingAverage: MovingAverage {
   }
   
   public func input(_ val: Float) {
-    if numSamples == 0 {
-      currentAverage = Double(val)
-      numSamples += 1
-      return
-    }
-    
     currentAverage = alpha * Double(val) + (1 - alpha) * currentAverage
     numSamples += 1
   }

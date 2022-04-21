@@ -9,17 +9,22 @@ public class ImageMean: Renderable {
   public static var threshold: Float = 0.02
   public static var activeAreaHeightFractionRange: ClosedRange<Float> = 0.04...0.06
   
+  func activeAreaHeightRange(imageHeight: Int) -> ClosedRange<Int> {
+    let fraction = Self.activeAreaHeightFractionRange
+    return Int(floor(fraction.lowerBound * Float(imageHeight)))...Int(ceil(fraction.upperBound * Float(imageHeight)))
+  }
+  
   var computedTexture: MTLTexture!
   
   
   var squashTextureBuffer: MTLTexture?
   var sobelTextureBuffer: MTLTexture?
   var cpuImageColumnBuffer: UnsafeMutablePointer<SIMD4<UInt8>>?
-//  var symmetryOutputBuffer: MTLBuffer?
   
   let pipelineState: MTLRenderPipelineState
-//  let lineOfSymmetryPSO: MTLComputePipelineState
   var threshold: Float = 0
+  
+  let activeAreaSelector = ActiveAreaSelector()
   
   public static var activeArea: [float2] = []
     
@@ -116,12 +121,25 @@ public class ImageMean: Renderable {
       return dot(float, float)
     }
 
-    Self.activeArea = ActiveAreaDetector.detectCandidateAreas(
+    let sizeRange = self.activeAreaHeightRange(imageHeight: texture.height)
+    let candidateAreas = ActiveAreaDetector.detectCandidateAreas(
       sobelOutput: sobelOutputFloat,
       squashOutput: squashOutputFloat,
       threshold: Self.threshold,
-      sizeRange: Self.activeAreaHeightFractionRange
+      sizeRange: sizeRange
     )
+    
+    activeAreaSelector.update(candidates: candidateAreas, sizeRange: sizeRange)
+    let currentBestGuess = activeAreaSelector.getActiveArea()
+    
+    if currentBestGuess == nil {
+      Self.activeArea = []
+    } else {
+      Self.activeArea = activeAreaSelector.getAllAreasSorted().map {[
+        $0[0] / Float(sobelOutputFloat.count),
+        $0[1] / Float(sobelOutputFloat.count)
+      ]}
+    }
   }
   
   // Copies single column image from MTLTexture to a CPU buffer with the correct amount of memory allocated

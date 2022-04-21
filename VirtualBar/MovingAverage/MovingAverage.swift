@@ -6,7 +6,6 @@
 //
 
 public protocol MovingAverage {
-  associatedtype T
-  func input(_: T)
-  func output() -> T
+  func input(_: Float)
+  func output() -> Float
 }

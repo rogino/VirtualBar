@@ -83,6 +83,9 @@ public class ActiveAreaSelector {
   
   let maxNumCandidates: Int = 4
   
+  let maxWeightedAveragedDerivative: Float = 1e-4
+  let minColor: Float = 0.3
+  
   
   fileprivate static func sort(_ candidates: [CandidateAreaHistory]) -> [CandidateAreaHistory] {
     // Brighter color -> larger is good
@@ -98,11 +101,7 @@ public class ActiveAreaSelector {
     }.sorted(by: { $0.sum == $1.sum ? $0.colorIndex < $1.colorIndex : $0.sum < $1.sum })
     // If sum of indices are the same, prefer color over weight
     
-    let sortedMatches: [CandidateAreaHistory] = indexSumSort.enumerated().map {
-      let match = colorSort[$1.colorIndex]
-//      match.ranking = $0
-      return match
-    }
+    let sortedMatches: [CandidateAreaHistory] = indexSumSort.enumerated().map { colorSort[$1.colorIndex] }
     
     return sortedMatches
   }
@@ -145,11 +144,13 @@ public class ActiveAreaSelector {
         break
       }
       let current = candidates[i]
-      /*
-      if current.ranking > maxRank {
-        print("Removal, rank:", candidates[i])
+      if current.centerColor < minColor {
+        print("Removal, color:", candidates[i])
         candidates.remove(at: i)
-      } else */ if sizeRange != nil && (
+      } else if current.weightedAveragedDerivative > maxWeightedAveragedDerivative {
+        print("Removal, weighted averaged derivative:", candidates[i])
+        candidates.remove(at: i)
+      } else if sizeRange != nil && (
         current.size < Float(sizeRange!.lowerBound) ||
         current.size > Float(sizeRange!.upperBound)
       ) {

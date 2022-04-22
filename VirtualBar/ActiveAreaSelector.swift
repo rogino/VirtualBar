@@ -14,12 +14,12 @@ public struct CandidateArea: CustomStringConvertible {
   var x2: Int { x1 + size }
   var center: Float { Float(x1) + Float(size) / 2.0 }
   
-  let centerColor: Float
+  let centerBrightness: Float
   let weightedAveragedDerivative: Float
   var ranking: Int
   
   public var description: String {
-    return String(format: "[%d to %d], color %.1f, weight %.7f", x1, x2, centerColor, weightedAveragedDerivative)
+    return String(format: "[%d to %d], brightness %.1f, weight %.7f", x1, x2, centerBrightness, weightedAveragedDerivative)
   }
 }
 
@@ -27,12 +27,12 @@ public struct CandidateArea: CustomStringConvertible {
 private class CandidateAreaHistory: CustomStringConvertible {
   let x1MovingAverage: MovingAverage
   let x2MovingAverage: MovingAverage
-  let centerColorAverage: MovingAverage
+  let centerBrightnessAverage: MovingAverage
   let weightedAveragedDerivativeAverage: MovingAverage
   
   var x1: Float { x1MovingAverage.output() }
   var x2: Float { x2MovingAverage.output() }
-  var centerColor: Float { centerColorAverage.output() }
+  var centerBrightness: Float { centerBrightnessAverage.output() }
   var weightedAveragedDerivative: Float { weightedAveragedDerivativeAverage.output() }
   
   var size: Float { x2 - x1 }
@@ -43,34 +43,37 @@ private class CandidateAreaHistory: CustomStringConvertible {
   init(initial: CandidateArea, rankMultiplier: Float = 1.0) {
     x1MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.x1))
     x2MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.x2))
-    centerColorAverage                = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.centerColor))
+    centerBrightnessAverage           = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.centerBrightness))
     weightedAveragedDerivativeAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.weightedAveragedDerivative))
   }
   
   func update(update: CandidateArea) {
     x1MovingAverage.input(Float(update.x1))
     x2MovingAverage.input(Float(update.x2))
-    centerColorAverage.input(update.centerColor)
+    centerBrightnessAverage.input(update.centerBrightness)
     weightedAveragedDerivativeAverage.input(update.weightedAveragedDerivative)
   }
   
-  func notFound(colorTendsTo: Float, weightedAverageTendsTo: Float) {
-    centerColorAverage.input(colorTendsTo)
+  func notFound(brightnessTendsTo: Float, weightedAverageTendsTo: Float) {
+    centerBrightnessAverage.input(brightnessTendsTo)
     weightedAveragedDerivativeAverage.input(weightedAverageTendsTo)
   }
   
   
   var description: String {
-    return String(format: "[%.2f to %.2f], color %.1f, weight %.7f", x1, x2, centerColor, weightedAveragedDerivative)
+    return String(format: "[%.2f to %.2f], brightness %.1f, weight %.7f", x1, x2, centerBrightness, weightedAveragedDerivative)
   }
   
 }
 
 public class ActiveAreaSelector {
+  let LOG = true
+  
   fileprivate var candidates: [CandidateAreaHistory] = []
- 
-  // Each sample the area is not found, the color tends to this value
-  let colorTendsTo: Float = 0
+  
+
+  // For each sample in which the area is not found, the color tends to this value
+  let brightnessTendsTo: Float = 0
   let weightedAverageTendsTo: Float = 0.001
   
   let initialRankMultiplier: Float = 5.0
@@ -84,12 +87,12 @@ public class ActiveAreaSelector {
   let maxNumCandidates: Int = 4
   
   let maxWeightedAveragedDerivative: Float = 1e-4
-  let minColor: Float = 0.3
+  let minBrightness: Float = 0.3
   
   
   fileprivate static func sort(_ candidates: [CandidateAreaHistory]) -> [CandidateAreaHistory] {
     // Brighter color -> larger is good
-    let colorSort  = candidates.sorted(by: { $0.centerColor > $1.centerColor })
+    let colorSort  = candidates.sorted(by: { $0.centerBrightness > $1.centerBrightness })
     
     // Lower averaged weighted derivative -> smaller is good
     let weightSort = candidates.sorted(by: { $0.weightedAveragedDerivative < $1.weightedAveragedDerivative })
@@ -107,63 +110,97 @@ public class ActiveAreaSelector {
   }
   
   func update(candidates newCandidates: [CandidateArea], sizeRange: ClosedRange<Int>?) {
-    print()
-    print()
-    print(newCandidates.count, "candidates received")
     var sortedCandidates = newCandidates.sorted(by: { $0.center < $1.center })
-    sortedCandidates.forEach { print($0) }
-    print()
+    
+    if LOG {
+      print("\n")
+      print(newCandidates.count, "candidates received")
+      sortedCandidates.forEach { print($0) }
+      print()
+    }
+    
     for current in candidates {
       let index = sortedCandidates.firstIndex(where: { current.center - maxDeviation < $0.center && $0.center < current.center + maxDeviation })
       if (index == nil) {
-        current.notFound(colorTendsTo: colorTendsTo, weightedAverageTendsTo: weightedAverageTendsTo)
+        current.notFound(brightnessTendsTo: brightnessTendsTo, weightedAverageTendsTo: weightedAverageTendsTo)
         continue
       }
+      // Remove from array so that we can determine which ones are new and which ones can be merged
       let match = sortedCandidates.remove(at: index!)
-      
-      print("New candidate merged with", current)
+      if LOG {
+        print("New candidate merged with", current)
+      }
       current.update(update: match)
     }
     
-    print(sortedCandidates.count, "new candidates")
+    if LOG {
+      print(sortedCandidates.count, "new candidates")
+    }
+    
     for newCandidate in sortedCandidates {
       candidates.append(CandidateAreaHistory(initial: newCandidate, rankMultiplier: initialRankMultiplier))
     }
    
-    
-    // Sorted by rank
+    // Sorted by rank, best first
     candidates = Self.sort(candidates)
+    
+    // Cut down number of candidates
     if candidates.count > maxNumCandidates {
-      print("Removed \(candidates.count - maxNumCandidates) worst candidates")
+      if LOG {
+        print("Removed \(candidates.count - maxNumCandidates) worst candidates")
+      }
       candidates = Array(candidates[0..<maxNumCandidates])
     }
     
+    removeBadCandidates(sizeRange: sizeRange == nil ? nil: Float(sizeRange!.lowerBound)...Float(sizeRange!.upperBound))
+    removeOverlappingCandidates()
+    
+    if LOG {
+      print("Current state")
+      candidates.enumerated().forEach { print($0, $1) }
+    }
+  }
+  
+  private func removeBadCandidates(sizeRange: ClosedRange<Float>?) {
+    // Remove candidates where the size is not within the range,
+    // or where the brightness too low or weighted averaged derivative too high
+    // Must be sorted by rank, highest-ranked first
     var i = 0
+    
     while true {
       if candidates.isEmpty || i >= candidates.count {
         break
       }
       let current = candidates[i]
-      if current.centerColor < minColor {
-        print("Removal, color:", candidates[i])
+      if current.centerBrightness < minBrightness {
+        if LOG {
+          print("Removal, color:", candidates[i])
+        }
         candidates.remove(at: i)
       } else if current.weightedAveragedDerivative > maxWeightedAveragedDerivative {
-        print("Removal, weighted averaged derivative:", candidates[i])
+        if LOG {
+          print("Removal, weighted averaged derivative:", candidates[i])
+        }
         candidates.remove(at: i)
       } else if sizeRange != nil && (
-        current.size < Float(sizeRange!.lowerBound) ||
-        current.size > Float(sizeRange!.upperBound)
+        current.size < sizeRange!.lowerBound ||
+        current.size > sizeRange!.upperBound
       ) {
-        print("Removal, size:", candidates[i].size, candidates[i])
+        if LOG {
+          print("Removal, size:", candidates[i].size, candidates[i])
+        }
         candidates.remove(at: i)
       } else {
         i += 1
       }
     }
-    
-    
-    // Duplicate removal. Keep those with highest rank
-    i = 0
+  }
+
+  private func removeOverlappingCandidates() {
+    // Removing overlapping sections
+    // Must be sorted by rank, highest-first
+    // These overlaps do not update the kept-candidate's values
+    var i = 0
     while true {
       if candidates.isEmpty || i >= candidates.count - 1 {
         break
@@ -174,35 +211,30 @@ public class ActiveAreaSelector {
       while j < candidates.count {
         let dup = candidates[j]
         if dup.x2 < candidate.x1 || candidate.x2 < dup.x1 {
+          // Not overlapping
           j += 1
           continue
         }
-        print(String(format: "Removal, overlap [%.1f, %.1f] with [%.1f, %.1f]:", dup.x1, dup.x2, candidate.x1, candidate.x2), dup.description)
+        if LOG {
+          print(String(format: "Removal, overlap [%.1f, %.1f] with [%.1f, %.1f]:", dup.x1, dup.x2, candidate.x1, candidate.x2), dup.description)
+        }
         candidates.remove(at: j)
       }
       i += 1
     }
-    
-    print("Current state")
-    candidates.enumerated().forEach {
-     print($0, $1)
-    }
-    
   }
+
   
   func getActiveArea() -> (x1: Float, x2: Float)? {
     if candidates.isEmpty {
       return nil
     }
     
-//    let bestCandidate = candidates.min(by: { $0.ranking < $1.ranking })!
     let bestCandidate = candidates.first!
     return (x1: bestCandidate.x1, x2: bestCandidate.x2)
   }
   
   func getAllAreasSorted() -> [SIMD2<Float>] {
-//    let sorted = candidates.sorted(by: { $0.ranking < $1.ranking })
-    
     return candidates.map { SIMD2<Float>( $0.x1, $0.x2 )}
   }
 }

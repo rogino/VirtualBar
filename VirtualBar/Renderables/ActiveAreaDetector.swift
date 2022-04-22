@@ -56,7 +56,7 @@ public class ActiveAreaDetector {
             // Idea: key rows can get detected, so use the squash map to get the color of the area
             // The active area will be the lightest area - keys are black while the body is grey,
             // so this should prevent a key row from being detected as a false positive
-            centerColor: squashOutput[current.x + current.size / 2],
+            centerBrightness: squashOutput[current.x + current.size / 2],
             // Idea: use weighted derivative quantify amount of variance
             weightedAveragedDerivative: Self.triangleWeightedAverage(arr: sobelOutput, min: current.x, size: current.size),
             ranking: -1

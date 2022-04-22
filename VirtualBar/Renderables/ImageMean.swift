@@ -125,6 +125,7 @@ public class ImageMean: Renderable {
       length: texture.height
     )
     
+    // Normalize brightness to [0, 1]
     let squashOutputFloat: [Float] = squashOutput4UInt8.map {
       var float: SIMD4<Float> = SIMD4<Float>($0)
       float.w = 0

@@ -22,6 +22,9 @@ class Renderer: NSObject {
   var straightenedCameraTexture: MTLTexture? = nil
   
   var cameraTextureCache: CVMetalTextureCache?
+  
+  var imageMean: ImageMean
+  var fingerPointsRenderer: FingerPointsRenderer
 
   public convenience init(metalView: MTKView) {
     guard let device = MTLCreateSystemDefaultDevice() else {
@@ -41,7 +44,11 @@ class Renderer: NSObject {
     Self.library = device.makeDefaultLibrary()
     
 //    self.depthStencilState = Self.buildDepthStencilState()!
+    
     self.straightener = Straighten()
+    self.imageMean = ImageMean()
+    self.fingerPointsRenderer = FingerPointsRenderer()
+    
     super.init()
     metalView.delegate = self
     
@@ -50,9 +57,9 @@ class Renderer: NSObject {
     
 //    renderables.append(Sphere())
 //    renderables.append(Triangle())
-    renderables.append(ImageMean())
+    renderables.append(imageMean)
 //    renderables.append(PlonkTexture())
-    renderables.append(FingerPointsRenderer())
+    renderables.append(fingerPointsRenderer)
   }
 
   // Library: set of metal functions
@@ -90,16 +97,9 @@ extension Renderer: MTKViewDelegate {
     
     for renderable in renderables {
       if straightenedCameraTexture != nil {
-        if let imageMean = renderable as? ImageMean {
-          imageMean.texture = straightenedCameraTexture
-        }
         if let plonkTexture = renderable as? PlonkTexture {
           plonkTexture.texture = straightenedCameraTexture
         }
-      }
-      
-      if let fingerPointsRenderer = renderable as? FingerPointsRenderer {
-        fingerPointsRenderer.fingerPoints = fingerPoints
       }
       renderable.draw(renderEncoder: renderEncoder)
     }
@@ -117,12 +117,18 @@ extension Renderer: MTKViewDelegate {
     self.cameraTexture = texture
     self.straightenedCameraTexture = straightener.straighten(image: texture)
     fingerPoints = fingerDetector.detectFingers(sampleBuffer: cmSample)
+    
+    self.imageMean.texture = straightenedCameraTexture
+    self.fingerPointsRenderer.fingerPoints = fingerPoints
   }
   
   func processFrame(texture: MTLTexture, cgImage: CGImage) {
     self.cameraTexture = texture
     self.straightenedCameraTexture = straightener.straighten(image: texture)
     fingerPoints = fingerDetector.detectFingers(image: cgImage)
+    
+    self.imageMean.texture = straightenedCameraTexture
+    self.fingerPointsRenderer.fingerPoints = fingerPoints
   }
 }
 

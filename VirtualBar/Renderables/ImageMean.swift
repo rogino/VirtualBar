@@ -5,7 +5,17 @@ import MetalPerformanceShaders
 public typealias float2 = SIMD2<Float>
 
 public class ImageMean: Renderable {
-  public var texture: MTLTexture!
+  private var _texture: MTLTexture!
+  
+  public var texture: MTLTexture! {
+    set {
+      self._texture = newValue
+      runMPS(texture: newValue)
+    }
+    get {
+      return self._texture
+    }
+  }
   public static var threshold: Float = 0.02
   public static var activeAreaHeightFractionRange: ClosedRange<Float> = 0.04...0.06
   
@@ -31,7 +41,7 @@ public class ImageMean: Renderable {
   init() {
     let textureLoader = MTKTextureLoader(device: Renderer.device)
     do {
-      texture = try textureLoader.newTexture(
+      _texture = try textureLoader.newTexture(
         name: "test", // File in .xcassets texture set
         scaleFactor: 1.0,
         bundle: Bundle.main,
@@ -39,6 +49,7 @@ public class ImageMean: Renderable {
       )
     } catch let error { fatalError(error.localizedDescription) }
     pipelineState = Self.makePipeline()
+    runMPS(texture: _texture)
   }
   
   
@@ -118,7 +129,7 @@ public class ImageMean: Renderable {
       var float: SIMD4<Float> = SIMD4<Float>($0)
       float.w = 0
       float /= 255
-      return dot(float, float)
+      return dot(float, float) / 3
     }
 
     let sizeRange = self.activeAreaHeightRange(imageHeight: texture.height)
@@ -184,7 +195,6 @@ public class ImageMean: Renderable {
   
   
   public func draw(renderEncoder: MTLRenderCommandEncoder) {
-    runMPS(texture: texture)
     renderEncoder.setRenderPipelineState(pipelineState)
     
     renderEncoder.setTriangleFillMode(.fill)

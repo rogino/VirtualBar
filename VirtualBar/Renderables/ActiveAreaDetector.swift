@@ -67,28 +67,6 @@ public class ActiveAreaDetector {
     }
     
     
-    let colorSortedMatches = candidateMatches.sorted(by: { $0.centerColor > $1.centerColor })
-    let weightSortedMatches = candidateMatches.sorted(by: { $0.weightedAveragedDerivative < $1.weightedAveragedDerivative })
-    
-    // Sum the color and weight indexes, find the lowest
-    let indexWeighted: [(weightIndex: Int, colorIndex: Int, sum: Int)] = colorSortedMatches.enumerated().map { (i, val) in
-      let weightIndex = weightSortedMatches.firstIndex(where: { $0.x1 == val.x1 })!
-      return (weightIndex: weightIndex, colorIndex: i, sum: weightIndex + i)
-    }.sorted(by: { $0.sum == $1.sum ? $0.colorIndex < $1.colorIndex : $0.sum < $1.sum }) // Prefer color over weight
-    
-    candidateMatches = indexWeighted.enumerated().map {
-      var match = colorSortedMatches[$1.colorIndex]
-      match.ranking = $0
-      return match
-    }
-    
     return candidateMatches
-    
-  //
-  //    return weightSortedMatches.map {[
-  ////    return coloredSortedMatches.map {[
-  //      Float($0.x1) / Float(sobelOutput.count),
-  //      Float($0.x2) / Float(sobelOutput.count)
-  //    ]}
   }
 }

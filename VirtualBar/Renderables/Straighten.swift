@@ -263,10 +263,12 @@ public class Straighten {
       try makeTextureBuffers(texture: image)
     }
     
+    // Copy segments from the left and right sides of the image into their own textures
     let params = makeStraightenParams(textureWidth: image.width)
     straightenCopyLR(commandBuffer: commandBuffer, image: image, params: params)
     
     commandBuffer.pushDebugGroup("MPS row reduce")
+    // Find the average pixel value for each row (horizontally)
     rowSquashEncoder.encode(
       commandBuffer: commandBuffer,
       sourceTexture: leftSampleTexture!,
@@ -279,8 +281,12 @@ public class Straighten {
     )
     commandBuffer.popDebugGroup()
     
+    // Calculate the difference squared between the left and right halves of the image
+    // Do this multiple times by sliding/offsetting the right image up/down by a few pixels
     straightenCalculateDeltaSquared(commandBuffer: commandBuffer, image: image, params: params)
     
+    // For each offset, determine the average difference. Due to the presence of strong horizontal lines,
+    // this should be lowest when you have the correct angle
     commandBuffer.pushDebugGroup("MPS col reduce")
     // Not sure why, but finding average changes values from [0, 1] to around [0, 30]
     colSquashEncoder.encode(
@@ -313,6 +319,8 @@ public class Straighten {
       let angle = atan2(-dy, dx)
       return (angle: angle, delta: delta)
     }.sorted(by: { $0.delta < $1.delta })
+    
+    // TODO somehow detect when not viewing a keyboard
     return sortedAngles.first!.angle
   }
   

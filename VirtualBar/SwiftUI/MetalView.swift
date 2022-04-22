@@ -37,15 +37,25 @@ import AVFoundation
 struct MetalView: View {
   @State private var metalView = MTKView()
   @State private var renderer: Renderer?
+ 
+  let useLiveCamera = false
   @State private var captureSession = AVCaptureSession()
+  @State private var videoFeed: VideoFeed?
 
   var body: some View {
     MetalViewRepresentable(metalView: $metalView)
       .onAppear {
         renderer = Renderer(metalView: metalView)
-        checkCameraPermission()
+        if useLiveCamera {
+          checkCameraPermission()
+        } else {
+          videoFeed = VideoFeed(renderer: renderer!)
+        }
       }.onDisappear {
-        captureSession.stopRunning()
+        if useLiveCamera {
+          captureSession.stopRunning()
+          videoFeed?.stop()
+        }
       }
   }
   

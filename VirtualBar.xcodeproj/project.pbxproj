@@ -33,6 +33,7 @@
 		4FD9CEBD28100F2500CF79E0 /* PlonkTexture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FD9CEBC28100F2500CF79E0 /* PlonkTexture.swift */; };
 		4FD9CEBF2810100B00CF79E0 /* PlonkTexture.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4FD9CEBE2810100B00CF79E0 /* PlonkTexture.metal */; };
 		4FD9CEC12810112E00CF79E0 /* PlonkTextureShared.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4FD9CEC02810112E00CF79E0 /* PlonkTextureShared.metal */; };
+		4FFACD9328121DFA005CD815 /* VideoFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFACD9228121DFA005CD815 /* VideoFeed.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,6 +66,7 @@
 		4FD9CEBC28100F2500CF79E0 /* PlonkTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlonkTexture.swift; sourceTree = "<group>"; };
 		4FD9CEBE2810100B00CF79E0 /* PlonkTexture.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PlonkTexture.metal; sourceTree = "<group>"; };
 		4FD9CEC02810112E00CF79E0 /* PlonkTextureShared.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PlonkTextureShared.metal; sourceTree = "<group>"; };
+		4FFACD9228121DFA005CD815 /* VideoFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoFeed.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -143,6 +145,7 @@
 				4FB88227280C1F3D009ADABB /* SwiftUI */,
 				4F2035C82802BC8100F89CAE /* Common.h */,
 				4F2035C92802BC8100F89CAE /* Helper.swift */,
+				4FFACD9228121DFA005CD815 /* VideoFeed.swift */,
 				4F2035C72802BC8100F89CAE /* Renderer.swift */,
 				4F2035BA2802BC8100F89CAE /* Renderables */,
 				4F2035C62802BC8100F89CAE /* Shaders.metal */,
@@ -256,6 +259,7 @@
 				4F2035D62802BC8100F89CAE /* Renderer.swift in Sources */,
 				4FB88226280C1ECE009ADABB /* ControlsView.swift in Sources */,
 				4F2035CD2802BC8100F89CAE /* Triangle.metal in Sources */,
+				4FFACD9328121DFA005CD815 /* VideoFeed.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

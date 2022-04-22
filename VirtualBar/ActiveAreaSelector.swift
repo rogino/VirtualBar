@@ -37,7 +37,8 @@ private class CandidateAreaHistory: CustomStringConvertible {
   init(initial: CandidateArea, rankMultiplier: Float = 1.0) {
     x1MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.x1))
     x2MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.x2))
-     rankingAverage = ExponentialWeightedMovingAverage(alpha: 0.10, invalidUntilNSamples: 0, initialValue: Float(initial.ranking) * rankMultiplier)
+     rankingAverage = ExponentialWeightedMovingAverage(alpha: 0.01, invalidUntilNSamples: 0, initialValue: Float(initial.ranking) * rankMultiplier)
+    // TODO use color and average weighted derivative to calculate rank as a derived property instead of using average rank
   }
   
   func update(update: CandidateArea) {

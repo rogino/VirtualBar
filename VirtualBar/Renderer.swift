@@ -112,6 +112,18 @@ extension Renderer: MTKViewDelegate {
     
     commandBuffer.commit()
   }
+  
+  func processFrame(texture: MTLTexture, cmSample: CMSampleBuffer) {
+    self.cameraTexture = texture
+    self.straightenedCameraTexture = straightener.straighten(image: texture)
+    fingerPoints = fingerDetector.detectFingers(sampleBuffer: cmSample)
+  }
+  
+  func processFrame(texture: MTLTexture, cgImage: CGImage) {
+    self.cameraTexture = texture
+    self.straightenedCameraTexture = straightener.straighten(image: texture)
+    fingerPoints = fingerDetector.detectFingers(image: cgImage)
+  }
 }
 
 
@@ -131,8 +143,6 @@ extension Renderer: AVCaptureVideoDataOutputSampleBufferDelegate {
     guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
       fatalError("Conversion from CMSampleBuffer to CVImageBuffer failed")
     }
-    
-    fingerPoints = fingerDetector.detectFingers(sampleBuffer: sampleBuffer)
     
     let width = CVPixelBufferGetWidth(imageBuffer)
     let height = CVPixelBufferGetHeight(imageBuffer)
@@ -159,8 +169,7 @@ extension Renderer: AVCaptureVideoDataOutputSampleBufferDelegate {
       fatalError("Failed to get camera MTLTexture")
     }
     
-    self.cameraTexture = texture
-    self.straightenedCameraTexture = straightener.straighten(image: texture)
+    processFrame(texture: texture, cmSample: sampleBuffer)
   }
 }
 
@@ -183,13 +192,27 @@ class FingerDetector {
   }
   
   
+  func detectFingers(image: CGImage) -> [simd_float3] {
+    let handler = VNImageRequestHandler(
+      cgImage: image,
+      orientation: .upMirrored,
+      options: [:]
+    )
+    return detectFingers(handler: handler)
+  }
+  
   func detectFingers(sampleBuffer: CMSampleBuffer) -> [simd_float3] {
-    // https://developer.apple.com/videos/play/wwdc2020/10653/
     let handler = VNImageRequestHandler(
       cmSampleBuffer: sampleBuffer,
       orientation: .upMirrored,
       options: [:]
     )
+    
+    return detectFingers(handler: handler)
+  }
+  
+  private func detectFingers(handler: VNImageRequestHandler) -> [simd_float3] {
+    // https://developer.apple.com/videos/play/wwdc2020/10653/
     
     // Ignore area above active area - get rid of reflections being detected as hands
     let first = ImageMean.activeArea.first ?? [-1, -1]

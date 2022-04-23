@@ -58,7 +58,6 @@ public class GestureRecognizer {
         
         historyState = min(historyState + 2, historySize)
         
-        //
         if historyState < isGesturingThreshold {
           // reset moving average
           indexMovingAverage.set(Float(tip2.x))

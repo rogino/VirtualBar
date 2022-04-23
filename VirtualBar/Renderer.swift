@@ -185,8 +185,17 @@ class FingerDetector {
   
   var gestureRecognizer = GestureRecognizer()
   
+  var volume: Float? = nil
+  var volumeControl: VolumeControl?
+  var volumeScale: Float = 1.0
+  
   init() {
     handPoseRequest.maximumHandCount = 2
+    do {
+      volumeControl = try VolumeControl()
+    } catch {
+      print(error.localizedDescription)
+    }
   }
   
   // Convert VN point point to float3, with z being confidence
@@ -244,10 +253,17 @@ class FingerDetector {
         return []
       }
       
-      gestureRecognizer.input(results, activeAreaBottom: 1 - (first.y - yTex) / (1 - yTex))
       
-      if (gestureRecognizer.output() != nil) {
-        print(gestureRecognizer.output())
+      let prev = gestureRecognizer.output()
+      gestureRecognizer.input(results, activeAreaBottom: 1 - (first.y - yTex) / (1 - yTex))
+      if let delta = gestureRecognizer.output() {
+        if prev == nil {
+          volume = volumeControl?.getVolume()
+        } else {
+          volumeControl?.setVolume(volume: volume! + delta * volumeScale)
+        }
+        
+        
         points.append(SIMD3<Float>(
           Float(gestureRecognizer.indexMovingAverage.output()) * 2 - 1,
           (first.x + first.y) / 2,

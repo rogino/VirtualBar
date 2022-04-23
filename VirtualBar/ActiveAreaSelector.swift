@@ -67,7 +67,7 @@ private class CandidateAreaHistory: CustomStringConvertible {
 }
 
 public class ActiveAreaSelector {
-  let LOG = true
+  let LOG = false
   
   fileprivate var candidates: [CandidateAreaHistory] = []
   

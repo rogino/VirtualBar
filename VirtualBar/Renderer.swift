@@ -182,6 +182,9 @@ extension Renderer: AVCaptureVideoDataOutputSampleBufferDelegate {
 
 class FingerDetector {
   var handPoseRequest = VNDetectHumanHandPoseRequest()
+  
+  var gestureRecognizer = GestureRecognizer()
+  
   init() {
     handPoseRequest.maximumHandCount = 2
   }
@@ -220,9 +223,11 @@ class FingerDetector {
   private func detectFingers(handler: VNImageRequestHandler) -> [simd_float3] {
     // https://developer.apple.com/videos/play/wwdc2020/10653/
     
+    let activeAreaTopOffset: Float = 0.05 // Look 5% above where the active area starts
+    
     // Ignore area above active area - get rid of reflections being detected as hands
     let first = ImageMean.activeArea.first ?? [-1, -1]
-    let yTex = first.x >= 0 ? max(0.0, first.x - 0.05) : 0.0 // Allow fingers to extend slightly above the active area
+    let yTex = first.x >= 0 ? max(0.0, first.x - activeAreaTopOffset) : 0.0 // Allow fingers to extend slightly above the active area
     let yScale = 1.0 - yTex
     handPoseRequest.regionOfInterest = CGRect(
       x: 0.0,
@@ -239,27 +244,46 @@ class FingerDetector {
         return []
       }
       
+      gestureRecognizer.input(results, activeAreaBottom: 1 - (first.y - yTex) / (1 - yTex))
+      
+      if (gestureRecognizer.output() != nil) {
+        print(gestureRecognizer.output())
+        points.append(SIMD3<Float>(
+          Float(gestureRecognizer.indexMovingAverage.output()) * 2 - 1,
+          (first.x + first.y) / 2,
+          1
+        ))
+
+        points.append(SIMD3<Float>(
+          Float(gestureRecognizer.middleMovingAverage.output()) * 2 - 1,
+          (first.x + first.y) / 2,
+          1
+        ))
+      }
+        
+      return points
+      
       for hand in results {
         let observation = hand
         
-//        for finger in observation.availableJointsGroupNames {
-//          let finger = try observation.recognizedPoints(finger)
-//          for joint in observation.availableJointNames {
-//            if let point = finger[joint] {
-//              points.append(transform(point, yScale: yScale))
-//            }
-//          }
-//        }
-//        
-        let  indexFingerPoints = try observation.recognizedPoints(.indexFinger)
-        let middleFingerPoints = try observation.recognizedPoints(.middleFinger)
-        guard let  indexTipPoint =  indexFingerPoints[.indexTip],
-              let middleTipPoint = middleFingerPoints[.middleTip] else {
-          continue
+        for finger in observation.availableJointsGroupNames {
+          let finger = try observation.recognizedPoints(finger)
+          for joint in observation.availableJointNames {
+            if let point = finger[joint] {
+              points.append(transform(point, yScale: yScale))
+            }
+          }
         }
-
-        points.append(transform(indexTipPoint, yScale: yScale))
-        points.append(transform(middleTipPoint, yScale: yScale))
+//        
+//        let  indexFingerPoints = try observation.recognizedPoints(.indexFinger)
+//        let middleFingerPoints = try observation.recognizedPoints(.middleFinger)
+//        guard let  indexTipPoint =  indexFingerPoints[.indexTip],
+//              let middleTipPoint = middleFingerPoints[.middleTip] else {
+//          continue
+//        }
+//
+//        points.append(transform(indexTipPoint, yScale: yScale))
+//        points.append(transform(middleTipPoint, yScale: yScale))
       }
       
       return points

@@ -35,4 +35,13 @@ public class ExponentialWeightedMovingAverage: MovingAverage {
     return Float(currentAverage)
   }
   
+  public func reset() {
+    self.currentAverage = Double(initialValue)
+    self.numSamples = 0
+  }
+  
+  public func set(_ val: Float) {
+    self.currentAverage = Double(val)
+  }
+  
 }

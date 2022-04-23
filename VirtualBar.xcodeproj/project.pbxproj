@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4F1336C52813AAAA004B4ECD /* GestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */; };
 		4F2035CA2802BC8100F89CAE /* ImageMean.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BB2802BC8100F89CAE /* ImageMean.metal */; };
 		4F2035CB2802BC8100F89CAE /* FingerPointsRenderer.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */; };
 		4F2035CC2802BC8100F89CAE /* Renderable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BD2802BC8100F89CAE /* Renderable.swift */; };
@@ -37,6 +38,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureRecognizer.swift; sourceTree = "<group>"; };
 		4F2035BB2802BC8100F89CAE /* ImageMean.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ImageMean.metal; sourceTree = "<group>"; };
 		4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = FingerPointsRenderer.metal; sourceTree = "<group>"; };
 		4F2035BD2802BC8100F89CAE /* Renderable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Renderable.swift; sourceTree = "<group>"; };
@@ -147,6 +149,7 @@
 				4F2035C92802BC8100F89CAE /* Helper.swift */,
 				4FFACD9228121DFA005CD815 /* VideoFeed.swift */,
 				4F2035C72802BC8100F89CAE /* Renderer.swift */,
+				4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */,
 				4F2035BA2802BC8100F89CAE /* Renderables */,
 				4F2035C62802BC8100F89CAE /* Shaders.metal */,
 				4F52CA132810E0E100EEB655 /* MovingAverage */,
@@ -260,6 +263,7 @@
 				4FB88226280C1ECE009ADABB /* ControlsView.swift in Sources */,
 				4F2035CD2802BC8100F89CAE /* Triangle.metal in Sources */,
 				4FFACD9328121DFA005CD815 /* VideoFeed.swift in Sources */,
+				4F1336C52813AAAA004B4ECD /* GestureRecognizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

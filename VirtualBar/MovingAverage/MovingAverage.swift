@@ -8,4 +8,6 @@
 public protocol MovingAverage {
   func input(_: Float)
   func output() -> Float
+  func reset()
+  func set(_: Float)
 }

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		4F1336C52813AAAA004B4ECD /* GestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */; };
+		4F1336C72813C098004B4ECD /* VolumeControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1336C62813C098004B4ECD /* VolumeControl.swift */; };
 		4F2035CA2802BC8100F89CAE /* ImageMean.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BB2802BC8100F89CAE /* ImageMean.metal */; };
 		4F2035CB2802BC8100F89CAE /* FingerPointsRenderer.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */; };
 		4F2035CC2802BC8100F89CAE /* Renderable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BD2802BC8100F89CAE /* Renderable.swift */; };
@@ -39,6 +40,7 @@
 
 /* Begin PBXFileReference section */
 		4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureRecognizer.swift; sourceTree = "<group>"; };
+		4F1336C62813C098004B4ECD /* VolumeControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeControl.swift; sourceTree = "<group>"; };
 		4F2035BB2802BC8100F89CAE /* ImageMean.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ImageMean.metal; sourceTree = "<group>"; };
 		4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = FingerPointsRenderer.metal; sourceTree = "<group>"; };
 		4F2035BD2802BC8100F89CAE /* Renderable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Renderable.swift; sourceTree = "<group>"; };
@@ -143,6 +145,7 @@
 		4FCB20AA2802BBA0003DC9BC /* VirtualBar */ = {
 			isa = PBXGroup;
 			children = (
+				4F1336C62813C098004B4ECD /* VolumeControl.swift */,
 				4FCB20AB2802BBA0003DC9BC /* VirtualBarApp.swift */,
 				4FB88227280C1F3D009ADABB /* SwiftUI */,
 				4F2035C82802BC8100F89CAE /* Common.h */,
@@ -252,6 +255,7 @@
 				4F2035CC2802BC8100F89CAE /* Renderable.swift in Sources */,
 				4F52CA162810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift in Sources */,
 				4FD9CEBD28100F2500CF79E0 /* PlonkTexture.swift in Sources */,
+				4F1336C72813C098004B4ECD /* VolumeControl.swift in Sources */,
 				4F2035D72802BC8100F89CAE /* Helper.swift in Sources */,
 				4F2035D52802BC8100F89CAE /* Shaders.metal in Sources */,
 				4FD9CEBF2810100B00CF79E0 /* PlonkTexture.metal in Sources */,

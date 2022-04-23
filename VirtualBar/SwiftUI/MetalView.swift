@@ -46,6 +46,9 @@ struct MetalView: View {
     MetalViewRepresentable(metalView: $metalView)
       .onAppear {
         renderer = Renderer(metalView: metalView)
+        do {
+          try VolumeControl().incrementVolume(delta: -0.1)
+        } catch { print(error.localizedDescription)}
         if useLiveCamera {
           checkCameraPermission()
         } else {

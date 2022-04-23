@@ -75,7 +75,7 @@ vertex VertexOutFingerPoints vertex_finger_points(
 ) {
   return {
     .position   = float4(vertices[id].x, vertices[id].y, 1, 1),
-    .confidence = vertices[id].y,
+    .confidence = vertices[id].z,
     .pointSize = 10
   };
 }

@@ -187,7 +187,7 @@ class FingerDetector {
   
   var volume: Float? = nil
   var volumeControl: VolumeControl?
-  var volumeScale: Float = 1.0
+  var volumeScale: Float = 3.0
   
   init() {
     handPoseRequest.maximumHandCount = 2
@@ -235,14 +235,14 @@ class FingerDetector {
     let activeAreaTopOffset: Float = 0.05 // Look 5% above where the active area starts
     
     // Ignore area above active area - get rid of reflections being detected as hands
-    let first = ImageMean.activeArea.first ?? [-1, -1]
-    let yTex = first.x >= 0 ? max(0.0, first.x - activeAreaTopOffset) : 0.0 // Allow fingers to extend slightly above the active area
-    let yScale = 1.0 - yTex
+    let activeArea = ImageMean.activeArea.first ?? [-1, -1]
+    let activeAreaTop = activeArea.x >= 0 ? max(0.0, activeArea.x - activeAreaTopOffset) : 0.0 // Allow fingers to extend slightly above the active area
+    let yScale = 1.0 - activeAreaTop
     handPoseRequest.regionOfInterest = CGRect(
       x: 0.0,
       y: 0, // y = 0 is the bottom
       width: 1.0,
-      height: 1.0 - Double(yTex)
+      height: 1.0 - Double(activeAreaTop)
     )
     
     var points: [simd_float3] = []
@@ -252,10 +252,10 @@ class FingerDetector {
       guard let results = handPoseRequest.results, results.count > 0 else {
         return []
       }
-      
+
       
       let prev = gestureRecognizer.output()
-      gestureRecognizer.input(results, activeAreaBottom: 1 - (first.y - yTex) / (1 - yTex))
+      gestureRecognizer.input(results, activeAreaBottom: 1 - (activeArea.y - activeAreaTop) / (1 - activeAreaTop))
       if let delta = gestureRecognizer.output() {
         if prev == nil {
           volume = volumeControl?.getVolume()
@@ -266,17 +266,16 @@ class FingerDetector {
         
         points.append(SIMD3<Float>(
           Float(gestureRecognizer.indexMovingAverage.output()) * 2 - 1,
-          (first.x + first.y) / 2,
-          1
+          1 - (activeArea.x + activeArea.y),
+          0.1
         ))
 
         points.append(SIMD3<Float>(
           Float(gestureRecognizer.middleMovingAverage.output()) * 2 - 1,
-          (first.x + first.y) / 2,
-          1
+          1 - (activeArea.x + activeArea.y),
+          0.1
         ))
       }
-        
       return points
       
       for hand in results {

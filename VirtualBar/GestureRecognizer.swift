@@ -16,10 +16,13 @@ public class GestureRecognizer {
   
   var historyState: Int = 0
   
-  var indexMovingAverage: MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.4, invalidUntilNSamples: 0, initialValue: 0)
-  var middleMovingAverage: MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.4, invalidUntilNSamples: 0, initialValue: 0)
+  var indexMovingAverage: MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.3, invalidUntilNSamples: 0, initialValue: 0)
+  var middleMovingAverage: MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.3, invalidUntilNSamples: 0, initialValue: 0)
   
   var minConfidence: Float = 0.6
+  
+  // Finger tip location not always accurate, so increase active area by this factor
+  var activeAreaFudgeScale: Float = 1.8
   
   
   
@@ -32,7 +35,7 @@ public class GestureRecognizer {
   }
   
   
-  // Bottom of active area, as fraction of search space
+  // Bottom of active area, as fraction of search space. Bottom is 0, top is 1
   public func input(_ results: [VNHumanHandPoseObservation], activeAreaBottom: Float) {
     historyState = max(historyState - 1, -1)
     // Subtract 1 since easier to do it here. Add 2 if fingers in correct place detected
@@ -41,7 +44,7 @@ public class GestureRecognizer {
       gestureStartPositition = nil
     }
     
-    let minY = 1 - (1 - activeAreaBottom) * 2 // Double the active area area
+    let minY = 1 - (1 - activeAreaBottom) * activeAreaFudgeScale
     
     for hand in results.count > 0 ? [results.first!]: [] {
       do {

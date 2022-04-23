@@ -9,6 +9,12 @@
 /* Begin PBXBuildFile section */
 		4F1336C52813AAAA004B4ECD /* GestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */; };
 		4F1336C72813C098004B4ECD /* VolumeControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1336C62813C098004B4ECD /* VolumeControl.swift */; };
+		4F1336D52813DF83004B4ECD /* brightness.c in Sources */ = {isa = PBXBuildFile; fileRef = 4F1336D42813DF83004B4ECD /* brightness.c */; settings = {COMPILER_FLAGS = "-Wl,-U,_CoreDisplay_Display_SetUserBrightness -Wl,-U,_CoreDisplay_Display_GetUserBrightness -Wl,-U,_DisplayServicesCanChangeBrightness -Wl,-U,_DisplayServicesBrightnessChanged -Wl,-U,_DisplayServicesGetBrightness -Wl,-U,_DisplayServicesSetBrightness "; }; };
+		4F1336D92813E3DE004B4ECD /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336D82813E3DE004B4ECD /* ApplicationServices.framework */; };
+		4F1336DB2813E47C004B4ECD /* DisplayServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336DA2813E47C004B4ECD /* DisplayServices.framework */; };
+		4F1336DC2813E47C004B4ECD /* DisplayServices.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336DA2813E47C004B4ECD /* DisplayServices.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4F1336DF2813E4CC004B4ECD /* CoreDisplay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336DE2813E4CC004B4ECD /* CoreDisplay.framework */; };
+		4F1336E02813E4CC004B4ECD /* CoreDisplay.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336DE2813E4CC004B4ECD /* CoreDisplay.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4F2035CA2802BC8100F89CAE /* ImageMean.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BB2802BC8100F89CAE /* ImageMean.metal */; };
 		4F2035CB2802BC8100F89CAE /* FingerPointsRenderer.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */; };
 		4F2035CC2802BC8100F89CAE /* Renderable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BD2802BC8100F89CAE /* Renderable.swift */; };
@@ -38,9 +44,40 @@
 		4FFACD9328121DFA005CD815 /* VideoFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFACD9228121DFA005CD815 /* VideoFeed.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		4F1336CB2813DEDD004B4ECD /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		4F1336DD2813E47C004B4ECD /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				4F1336E02813E4CC004B4ECD /* CoreDisplay.framework in Embed Frameworks */,
+				4F1336DC2813E47C004B4ECD /* DisplayServices.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureRecognizer.swift; sourceTree = "<group>"; };
 		4F1336C62813C098004B4ECD /* VolumeControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeControl.swift; sourceTree = "<group>"; };
+		4F1336C82813DE8F004B4ECD /* Brightness.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Brightness.xcconfig; sourceTree = "<group>"; };
+		4F1336CD2813DEDD004B4ECD /* brightness */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = brightness; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F1336D42813DF83004B4ECD /* brightness.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = brightness.c; sourceTree = "<group>"; };
+		4F1336D62813E038004B4ECD /* brightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = brightness.h; sourceTree = "<group>"; };
+		4F1336D82813E3DE004B4ECD /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
+		4F1336DA2813E47C004B4ECD /* DisplayServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DisplayServices.framework; path = ../../../../../System/Library/PrivateFrameworks/DisplayServices.framework; sourceTree = "<group>"; };
+		4F1336DE2813E4CC004B4ECD /* CoreDisplay.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreDisplay.framework; path = ../../../../../System/Library/Frameworks/CoreDisplay.framework; sourceTree = "<group>"; };
 		4F2035BB2802BC8100F89CAE /* ImageMean.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ImageMean.metal; sourceTree = "<group>"; };
 		4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = FingerPointsRenderer.metal; sourceTree = "<group>"; };
 		4F2035BD2802BC8100F89CAE /* Renderable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Renderable.swift; sourceTree = "<group>"; };
@@ -74,6 +111,16 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		4F1336CA2813DEDD004B4ECD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F1336D92813E3DE004B4ECD /* ApplicationServices.framework in Frameworks */,
+				4F1336DF2813E4CC004B4ECD /* CoreDisplay.framework in Frameworks */,
+				4F1336DB2813E47C004B4ECD /* DisplayServices.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4FCB20A52802BBA0003DC9BC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -84,6 +131,25 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4F1336CE2813DEDD004B4ECD /* brightness */ = {
+			isa = PBXGroup;
+			children = (
+				4F1336D42813DF83004B4ECD /* brightness.c */,
+				4F1336D62813E038004B4ECD /* brightness.h */,
+			);
+			path = brightness;
+			sourceTree = "<group>";
+		};
+		4F1336D72813E3DE004B4ECD /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				4F1336DE2813E4CC004B4ECD /* CoreDisplay.framework */,
+				4F1336DA2813E47C004B4ECD /* DisplayServices.framework */,
+				4F1336D82813E3DE004B4ECD /* ApplicationServices.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		4F2035BA2802BC8100F89CAE /* Renderables */ = {
 			isa = PBXGroup;
 			children = (
@@ -130,7 +196,9 @@
 			isa = PBXGroup;
 			children = (
 				4FCB20AA2802BBA0003DC9BC /* VirtualBar */,
+				4F1336CE2813DEDD004B4ECD /* brightness */,
 				4FCB20A92802BBA0003DC9BC /* Products */,
+				4F1336D72813E3DE004B4ECD /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -138,6 +206,7 @@
 			isa = PBXGroup;
 			children = (
 				4FCB20A82802BBA0003DC9BC /* VirtualBar.app */,
+				4F1336CD2813DEDD004B4ECD /* brightness */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -152,6 +221,7 @@
 				4F2035C92802BC8100F89CAE /* Helper.swift */,
 				4FFACD9228121DFA005CD815 /* VideoFeed.swift */,
 				4F2035C72802BC8100F89CAE /* Renderer.swift */,
+				4F1336C82813DE8F004B4ECD /* Brightness.xcconfig */,
 				4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */,
 				4F2035BA2802BC8100F89CAE /* Renderables */,
 				4F2035C62802BC8100F89CAE /* Shaders.metal */,
@@ -174,6 +244,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4F1336CC2813DEDD004B4ECD /* brightness */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F1336D12813DEDD004B4ECD /* Build configuration list for PBXNativeTarget "brightness" */;
+			buildPhases = (
+				4F1336C92813DEDD004B4ECD /* Sources */,
+				4F1336CA2813DEDD004B4ECD /* Frameworks */,
+				4F1336CB2813DEDD004B4ECD /* CopyFiles */,
+				4F1336DD2813E47C004B4ECD /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = brightness;
+			productName = brightness;
+			productReference = 4F1336CD2813DEDD004B4ECD /* brightness */;
+			productType = "com.apple.product-type.tool";
+		};
 		4FCB20A72802BBA0003DC9BC /* VirtualBar */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4FCB20B72802BBA1003DC9BC /* Build configuration list for PBXNativeTarget "VirtualBar" */;
@@ -201,6 +289,9 @@
 				LastSwiftUpdateCheck = 1330;
 				LastUpgradeCheck = 1330;
 				TargetAttributes = {
+					4F1336CC2813DEDD004B4ECD = {
+						CreatedOnToolsVersion = 13.3.1;
+					};
 					4FCB20A72802BBA0003DC9BC = {
 						CreatedOnToolsVersion = 13.3;
 					};
@@ -220,6 +311,7 @@
 			projectRoot = "";
 			targets = (
 				4FCB20A72802BBA0003DC9BC /* VirtualBar */,
+				4F1336CC2813DEDD004B4ECD /* brightness */,
 			);
 		};
 /* End PBXProject section */
@@ -237,6 +329,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4F1336C92813DEDD004B4ECD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F1336D52813DF83004B4ECD /* brightness.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4FCB20A42802BBA0003DC9BC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -274,6 +374,36 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		4F1336D22813DEDD004B4ECD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2M6L8JXTW7;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYSTEM_FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks",
+				);
+			};
+			name = Debug;
+		};
+		4F1336D32813DEDD004B4ECD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2M6L8JXTW7;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYSTEM_FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks",
+				);
+			};
+			name = Release;
+		};
 		4FCB20B52802BBA1003DC9BC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -448,6 +578,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4F1336D12813DEDD004B4ECD /* Build configuration list for PBXNativeTarget "brightness" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F1336D22813DEDD004B4ECD /* Debug */,
+				4F1336D32813DEDD004B4ECD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		4FCB20A32802BBA0003DC9BC /* Build configuration list for PBXProject "VirtualBar" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

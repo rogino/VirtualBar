@@ -71,7 +71,6 @@
 /* Begin PBXFileReference section */
 		4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureRecognizer.swift; sourceTree = "<group>"; };
 		4F1336C62813C098004B4ECD /* VolumeControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeControl.swift; sourceTree = "<group>"; };
-		4F1336C82813DE8F004B4ECD /* Brightness.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Brightness.xcconfig; sourceTree = "<group>"; };
 		4F1336CD2813DEDD004B4ECD /* brightness */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = brightness; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F1336D42813DF83004B4ECD /* brightness.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = brightness.c; sourceTree = "<group>"; };
 		4F1336D62813E038004B4ECD /* brightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = brightness.h; sourceTree = "<group>"; };
@@ -221,7 +220,6 @@
 				4F2035C92802BC8100F89CAE /* Helper.swift */,
 				4FFACD9228121DFA005CD815 /* VideoFeed.swift */,
 				4F2035C72802BC8100F89CAE /* Renderer.swift */,
-				4F1336C82813DE8F004B4ECD /* Brightness.xcconfig */,
 				4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */,
 				4F2035BA2802BC8100F89CAE /* Renderables */,
 				4F2035C62802BC8100F89CAE /* Shaders.metal */,

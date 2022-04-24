@@ -59,7 +59,7 @@ typedef struct {
   ushort rightX; // left x coordinate of right section
   ushort width;  // width of left and right sections
   short offsetYMin; // largest negative y offset
-  short offsetYMax; // largest positiev y offset
+  short offsetYMax; // largest positive y offset
 } StraightenParams;
 
 #endif /* Common_h */

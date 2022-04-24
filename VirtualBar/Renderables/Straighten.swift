@@ -302,6 +302,9 @@ public class Straighten {
     
     Self.copyTexture(source: deltaAveragedTexture!, destination: deltaAveragedCPU!)
     let averageDelta = Self.copyPixelsToArray(source: deltaAveragedCPU!, length: deltaTexture!.width)
+      .enumerated().map({ $0.1 * Float(image.height) / ((Float(image.height) - 2 * abs(Float(params.offsetYMin) + Float($0.0)))) })
+    // Textures initialized to 0. Top and bottom i pixels are ignored since the two images do not overlap
+    // with the offset, so correct this
     let angle = calculateCorrectionAngle(avgDelta: averageDelta, params: params)
     
     movingAverage.input(angle)

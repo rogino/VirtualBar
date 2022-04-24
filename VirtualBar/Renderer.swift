@@ -267,13 +267,13 @@ class FingerDetector {
         points.append(SIMD3<Float>(
           Float(gestureRecognizer.indexMovingAverage.output()) * 2 - 1,
           1 - (activeArea.x + activeArea.y),
-          0.1
+          1
         ))
 
         points.append(SIMD3<Float>(
           Float(gestureRecognizer.middleMovingAverage.output()) * 2 - 1,
           1 - (activeArea.x + activeArea.y),
-          0.1
+          1
         ))
       }
       return points

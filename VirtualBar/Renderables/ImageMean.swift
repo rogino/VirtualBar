@@ -150,6 +150,7 @@ public class ImageMean: Renderable {
       Self.activeArea = activeAreaSelector.getAllAreasSorted().map {[
         $0[0] / Float(sobelOutputFloat.count),
         $0[1] / Float(sobelOutputFloat.count)
+//        ($0[1] + ($0[1] - $0[0]) * GestureRecognizer().activeAreaFudgeScale) / Float(sobelOutputFloat.count)
       ]}
     }
   }

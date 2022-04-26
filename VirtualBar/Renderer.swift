@@ -288,6 +288,14 @@ class FingerDetector {
             0.5
           ))
         }
+        
+        if let avg = gestureRecognizer.currentPosition {
+          points.append(SIMD3<Float>(
+            Float(avg) * 2 - 1,
+            1 - (activeArea.x + activeArea.y),
+            0.3
+          ))
+        }
       }
       return points
       

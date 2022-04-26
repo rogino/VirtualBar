@@ -71,7 +71,6 @@ public class GestureRecognizer {
   
   var gestureState: GestureState
   
-  
   let movingAverageAlpha: Float = 0.3
   var  indexMovingAverage: MovingAverage
   var middleMovingAverage: MovingAverage
@@ -85,27 +84,36 @@ public class GestureRecognizer {
     gestureState = GestureState()
   }
   
+  // Minimum finger point confidence
   var minConfidence: Float = 0.6
   
   // Finger tip location not always accurate, so increase active area by this factor
-  var activeAreaFudgeScale: Float = 1.8
+  var activeAreaFudgeScale: Float = 1.2
+  
+  // for gesture to be detected as three finger, difference between (index and middle
+  // fingers average) and ring finger's y values can be a maximum of this.
+  // Negative means ring finger // must be *above* index and middle average
+  let maxRingDeltaY: Float = 0.03
   
   
-  public func output() -> Float? {
+  public var currentPosition: Float? {
     switch gestureState.gestureType {
     case .two:
-      print("TWO FINGER")
-      let currentPosition = (middleMovingAverage.output() + indexMovingAverage.output()) / 2
-      return currentPosition - gestureState.startPosition!
-      
+      return (middleMovingAverage.output() + indexMovingAverage.output()) / 2
     case .three:
-      print("THREE FINGER")
-      let currentPosition = (middleMovingAverage.output() + indexMovingAverage.output() + ringMovingAverage.output()) / 3
-      return currentPosition - gestureState.startPosition!
-      
+      return (middleMovingAverage.output() + indexMovingAverage.output() + ringMovingAverage.output()) / 3
     default:
       return nil
     }
+  }
+  
+  public func output() -> Float? {
+    guard let currentPosition = currentPosition,
+          let startPosition = gestureState.startPosition
+    else {
+      return nil
+    }
+    return currentPosition - startPosition
   }
   
   
@@ -132,6 +140,7 @@ public class GestureRecognizer {
   
   // Bottom of active area, as fraction of search space. Bottom is 0, top is 1
   public func input(_ results: [VNHumanHandPoseObservation], activeAreaBottom: Float) {
+    // Need to increase size of active area due to inaccuracies in detector
     let minY = 1 - (1 - activeAreaBottom) * activeAreaFudgeScale
     
     // TODO multiple hand detection
@@ -157,14 +166,22 @@ public class GestureRecognizer {
         detectedGesture = .two
         position = averageX([.indexTip, .middleTip])
         if fingerTips.keys.contains(.ringTip) {
-          detectedGesture = .three
-          position = averageX([.indexTip, .middleTip, .ringTip])
+          let indexMiddleAvgY = (fingerTips[.indexTip]!.y + fingerTips[.middleTip]!.y) / 2
+          let ringY = fingerTips[.ringTip]!.y
+          // Tip detection can be quite inaccurate but is consistent within a frame, so
+          // ring finger often detected as being inside active area. Bending the ring finger
+          // more leads to hand not being detected, so this needed to avoid detecting a two
+          // finger gesture as a three finger one
+          if Float(indexMiddleAvgY - ringY) <= maxRingDeltaY {
+            detectedGesture = .three
+            position = averageX([.indexTip, .middleTip, .ringTip])
+          }
+          print(Float(indexMiddleAvgY - ringY), detectedGesture)
         }
       }
       
       switch gestureState.tick(detected: detectedGesture, startPosition: position) {
       case .begin:
-        print("RESET")
         if [.two, .three].contains(gestureState.gestureType) {
           indexMovingAverage.set(tipXPositions[.indexTip]!)
           middleMovingAverage.set(tipXPositions[.middleTip]!)
@@ -177,7 +194,6 @@ public class GestureRecognizer {
         if gestureState.gestureType == .none {
           break
         }
-        print("UPDATE")
         if let x = tipXPositions[.indexTip] {
           indexMovingAverage.input(x)
         }

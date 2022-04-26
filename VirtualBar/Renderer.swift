@@ -263,7 +263,6 @@ class FingerDetector {
           volumeControl?.setVolume(volume: volume! + delta * volumeScale)
         }
         
-        
         points.append(SIMD3<Float>(
           Float(gestureRecognizer.indexMovingAverage.output()) * 2 - 1,
           1 - (activeArea.x + activeArea.y),
@@ -275,6 +274,20 @@ class FingerDetector {
           1 - (activeArea.x + activeArea.y),
           1
         ))
+        
+        points.append(SIMD3<Float>(
+          Float(gestureRecognizer.ringMovingAverage.output()) * 2 - 1,
+          1 - (activeArea.x + activeArea.y),
+          1
+        ))
+       
+        if let start = gestureRecognizer.twoFinger.startPosition {
+          points.append(SIMD3<Float>(
+            Float(start) * 2 - 1,
+            1 - (activeArea.x + activeArea.y),
+            0.5
+          ))
+        }
       }
       return points
       

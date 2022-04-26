@@ -9,9 +9,9 @@ import AVFoundation
 import MetalKit
 
 class VideoFeed {
-//  static let videoPath: URL = URL.init(fileURLWithPath: "/Users/rioog/Documents/MetalTutorial/virtualbar/hand_gesture_data/Movie on 21-04-22 at 18.32.mov")
-  static let videoPath: URL = URL.init(fileURLWithPath: "/Users/rioog/Documents/MetalTutorial/virtualbar/hand_gesture_data/Movie on 22-04-22 at 12.01.mov")
-  static let slowDown: Double = 10.0
+//  let videoPath: URL = URL.init(fileURLWithPath: "/Users/rioog/Documents/MetalTutorial/virtualbar/hand_gesture_data/Movie on 21-04-22 at 18.32.mov")
+  var videoPath: URL = URL.init(fileURLWithPath: "/Users/rioog/Documents/MetalTutorial/virtualbar/hand_gesture_data/Movie on 22-04-22 at 12.01.mov")
+  let slowDown: Double
   
   let frameRate: Int32 = 30
   var currentTime: Float64 = 0
@@ -20,14 +20,22 @@ class VideoFeed {
   let generator: AVAssetImageGenerator
   let textureLoader: MTKTextureLoader
   
-  let frameRange: ClosedRange<Double> = (8.0)...(20.0)
+  var frameRange: ClosedRange<Double>? = (8.0)...(20.0)
   
   var timer: Timer? = nil
   let renderer: Renderer
   
-  init(renderer: Renderer) {
+  init(renderer: Renderer, videoPath: String? = nil, frameRange: ClosedRange<Double>? = nil, slowDown: Double = 1.0) {
     // https://stackoverflow.com/questions/42665271/swift-get-all-frames-from-video
-    asset = AVAsset(url: Self.videoPath)
+    if videoPath != nil {
+      self.videoPath = URL.init(fileURLWithPath: videoPath!)
+      self.frameRange = nil
+    }
+    if frameRange != nil {
+      self.frameRange = frameRange!
+    }
+    self.slowDown = slowDown
+    asset = AVAsset(url: self.videoPath)
     duration = CMTimeGetSeconds(asset.duration)
     generator = AVAssetImageGenerator(asset: asset)
     generator.appliesPreferredTrackTransform = true
@@ -38,14 +46,14 @@ class VideoFeed {
     textureLoader = MTKTextureLoader(device: Renderer.device)
     
     self.timer = Timer.scheduledTimer(
-      timeInterval: Self.slowDown / Double(frameRate),
+      timeInterval: slowDown / Double(frameRate),
       target: self,
       selector: #selector(timerCallback),
       userInfo: nil,
       repeats: true
     )
     
-    currentTime = frameRange.lowerBound
+    currentTime = self.frameRange?.lowerBound ?? 0
 
   }
   
@@ -56,15 +64,15 @@ class VideoFeed {
   
   func stop() {
     timer?.invalidate()
-    currentTime = frameRange.lowerBound
+    currentTime = frameRange?.lowerBound ?? 0
   }
   
   func generateFrame() -> (MTLTexture, CGImage) {
     print("FRAME", currentTime)
     let time: CMTime = CMTimeMakeWithSeconds(currentTime, preferredTimescale: frameRate)
     currentTime += 1 / Double(frameRate)
-    if currentTime > duration || currentTime > frameRange.upperBound {
-      currentTime = frameRange.lowerBound
+    if currentTime > duration || (frameRange != nil && currentTime > frameRange!.upperBound) {
+      currentTime = frameRange?.lowerBound ?? 0
     }
     
     do {
@@ -74,7 +82,7 @@ class VideoFeed {
     } catch {
       print("FAILED")
       print(error.localizedDescription)
-      currentTime = frameRange.lowerBound
+      currentTime = frameRange?.lowerBound ?? 0
       return generateFrame()
     }
   }

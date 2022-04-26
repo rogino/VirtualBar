@@ -281,7 +281,7 @@ class FingerDetector {
           1
         ))
        
-        if let start = gestureRecognizer.twoFinger.startPosition {
+        if let start = gestureRecognizer.gestureState.startPosition {
           points.append(SIMD3<Float>(
             Float(start) * 2 - 1,
             1 - (activeArea.x + activeArea.y),

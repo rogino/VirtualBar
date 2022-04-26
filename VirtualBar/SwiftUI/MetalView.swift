@@ -38,7 +38,7 @@ struct MetalView: View {
   @State private var metalView = MTKView()
   @State private var renderer: Renderer?
  
-  let useLiveCamera = false
+  let useLiveCamera = true
   @State private var captureSession = AVCaptureSession()
   @State private var videoFeed: VideoFeed?
 

@@ -7,58 +7,82 @@
 
 import Vision
 
+/**
+In first m frames, if n of them have three fingers then three finger gesture. Else if n of them have two fingers, then two finger gesture. Initialize start position then
+ 
+If fewer than n out of m ticks contain two fingers (even if three finger gesture), then end the gesture and reset state
+ */
 
 public class GestureRecognizer {
+  enum GestureType: CaseIterable {
+    // In reverse order of priority
+    case none, two, three
+  }
+  
+  enum GestureChange {
+    case noChange, begin, end
+  }
+  
   struct GestureState {
-    var startPosition: Float? = nil
     let historySize: Int = 6
-    let threshold: Int = 3
-    // In previous {historySize} frames, gesture must have been detected in previous {threshold} frames
+    let startThreshold: Int = 4
+    let stopThreshold: Int = 3
     
-    var state: Int = 0
+    var startPosition: Float? = nil
+    var history: [GestureType] = []
+    var gestureType: GestureType = .none
+    // To start a gesture, at least {startThreshold} out of the previous {historySize} frames must
+    // have detected two (or three) fingers. To end, {stopThreshold} frames in the history must be
+    // .none
     
-    // Assume gesture *not found* on each tick; increment by 2 if found
-    mutating func tick() {
-      state = max(state - 1, -1)
-      // min of -1 since -1 + 1 = 1
+    mutating func tick(detected: GestureType, startPosition: Float? = nil) -> GestureChange {
+      history.append(detected)
       
-      if state < threshold && startPosition != nil {
-        startPosition = nil
+      if history.count > historySize {
+        history.removeFirst()
       }
-    }
-    
-    var shouldBeGesturing: Bool { state >= threshold }
-    var       isGesturing: Bool { state >= threshold && startPosition != nil }
-    
-    mutating func found(startPosition: Float) {
-      state = max(state + 2, historySize)
-   
-      if shouldBeGesturing && !isGesturing {
-//        historyState >= isGesturingThreshold && gestureStartPositition == nil {
-          // begin gesture
-        self.startPosition = startPosition
+      
+      let counts: [GestureType: Int] = Dictionary(history.map({ ($0, 1) }), uniquingKeysWith: { $0 + $1 })
+      
+      var stateChange: GestureChange = .noChange
+      
+      if gestureType == .none {
+        // May need to start the gesture now
+        for gesture in GestureType.allCases.reversed().filter({ $0 != .none }) {
+          if (counts[gesture] ?? 0) >= startThreshold {
+            gestureType = gesture
+            stateChange = .begin
+            self.startPosition = startPosition
+            break
+          }
+        }
+      } else {
+        // Too many non-gesture frames detected
+        if (counts[.none] ?? 0) >= stopThreshold {
+          gestureType = .none
+          stateChange = .end
+          self.startPosition = nil
+        }
       }
+      
+      return stateChange
     }
   }
   
-  var twoFinger: GestureState
-  let twoFingerPoints: [VNHumanHandPoseObservation.JointName] = [.indexTip, .middleTip]
+  var gestureState: GestureState
   
-  var threeFinger: GestureState
-  let threeFingerPoints: [VNHumanHandPoseObservation.JointName] = [.indexTip, .middleTip, .ringTip]
   
   let movingAverageAlpha: Float = 0.3
-  var indexMovingAverage: MovingAverage
+  var  indexMovingAverage: MovingAverage
   var middleMovingAverage: MovingAverage
-  var ringMovingAverage: MovingAverage
+  var   ringMovingAverage: MovingAverage
   
   init() {
      indexMovingAverage = ExponentialWeightedMovingAverage(alpha: movingAverageAlpha)
     middleMovingAverage = ExponentialWeightedMovingAverage(alpha: movingAverageAlpha)
       ringMovingAverage = ExponentialWeightedMovingAverage(alpha: movingAverageAlpha)
     
-      twoFinger = GestureState()
-    threeFinger = GestureState()
+    gestureState = GestureState()
   }
   
   var minConfidence: Float = 0.6
@@ -68,19 +92,25 @@ public class GestureRecognizer {
   
   
   public func output() -> Float? {
-    if threeFinger.isGesturing {
-      print("THREE FINGER")
-      let currentPosition = (middleMovingAverage.output() + indexMovingAverage.output() + ringMovingAverage.output()) / 3
-      return currentPosition - threeFinger.startPosition!
-    } else if twoFinger.isGesturing {
+    switch gestureState.gestureType {
+    case .two:
       print("TWO FINGER")
       let currentPosition = (middleMovingAverage.output() + indexMovingAverage.output()) / 2
-      return currentPosition - twoFinger.startPosition!
+      return currentPosition - gestureState.startPosition!
+      
+    case .three:
+      print("THREE FINGER")
+      let currentPosition = (middleMovingAverage.output() + indexMovingAverage.output() + ringMovingAverage.output()) / 3
+      return currentPosition - gestureState.startPosition!
+      
+    default:
+      return nil
     }
-    return nil
   }
   
   
+  // Returns dict where keys are a subset of `points`, containing only those present in
+  // the hand and where the point is in the required position and meets the confidence requirements
   func tryGetFingerTips(
     hand: VNHumanHandPoseObservation,
     minConfidence: VNConfidence = 0,
@@ -102,8 +132,6 @@ public class GestureRecognizer {
   
   // Bottom of active area, as fraction of search space. Bottom is 0, top is 1
   public func input(_ results: [VNHumanHandPoseObservation], activeAreaBottom: Float) {
-      twoFinger.tick()
-    threeFinger.tick()
     let minY = 1 - (1 - activeAreaBottom) * activeAreaFudgeScale
     
     // TODO multiple hand detection
@@ -116,65 +144,53 @@ public class GestureRecognizer {
       
       let tipXPositions = fingerTips.mapValues({ Float($0.x) })
       
-      func averageX(points: [VNHumanHandPoseObservation.JointName]) -> Float {
+      func averageX(_ points: [VNHumanHandPoseObservation.JointName]) -> Float {
         return tipXPositions.reduce(Float(0), {
           $0 + (points.contains($1.key) ? $1.value: 0)
         }) / Float(points.count)
-        
       }
-      if twoFingerPoints.allSatisfy(fingerTips.keys.contains) {
-        if !twoFinger.isGesturing {
-          // Fell below threshold at some point in the past
+      
+      var detectedGesture: GestureType = .none
+      var position: Float? = nil
+      
+      if fingerTips.keys.contains(.indexTip) && fingerTips.keys.contains(.middleTip) {
+        detectedGesture = .two
+        position = averageX([.indexTip, .middleTip])
+        if fingerTips.keys.contains(.ringTip) {
+          detectedGesture = .three
+          position = averageX([.indexTip, .middleTip, .ringTip])
+        }
+      }
+      
+      switch gestureState.tick(detected: detectedGesture, startPosition: position) {
+      case .begin:
+        print("RESET")
+        if [.two, .three].contains(gestureState.gestureType) {
           indexMovingAverage.set(tipXPositions[.indexTip]!)
           middleMovingAverage.set(tipXPositions[.middleTip]!)
-        } else {
-           indexMovingAverage.input(tipXPositions[.indexTip]!)
-          middleMovingAverage.input(tipXPositions[.middleTip]!)
-        }
-        twoFinger.found(startPosition: averageX(points: threeFingerPoints))
-                            
-        if fingerTips.keys.contains(.ringTip) {
-          if !threeFinger.isGesturing {
-            ringMovingAverage.reset()
-          } else {
-            ringMovingAverage.input(tipXPositions[.ringTip]!)
+          if gestureState.gestureType == .three {
+            ringMovingAverage.set(tipXPositions[.ringTip]!)
           }
-            
-          threeFinger.found(startPosition: averageX(points: threeFingerPoints))
         }
+        break
+      case .noChange:
+        if gestureState.gestureType == .none {
+          break
+        }
+        print("UPDATE")
+        if let x = tipXPositions[.indexTip] {
+          indexMovingAverage.input(x)
+        }
+        if let x = tipXPositions[.middleTip] {
+          middleMovingAverage.input(x)
+        }
+        if let x = tipXPositions[.ringTip] {
+          ringMovingAverage.input(x)
+        }
+        break
+      case .end:
+        break
       }
-//    }
-      
-//      do {
-//        let tipIndex = try hand.recognizedPoint(.indexTip)
-//        let tipMiddle = try hand.recognizedPoint(.middleTip)
-//
-//        if tipIndex.confidence < minConfidence || tipMiddle.confidence < minConfidence {
-//          continue
-//        }
-//
-//        if Float(tipIndex.y) < minY || Float(tipMiddle.y) < minY {
-//          continue
-//        }
-//
-//        historyState = min(historyState + 2, historySize)
-//
-//        if historyState < isGesturingThreshold {
-//          // reset moving average
-//          indexMovingAverage.set(Float(tipIndex.x))
-//          middleMovingAverage.set(Float(tipMiddle.x))
-//        }
-//
-//        indexMovingAverage.input(Float(tipIndex.x))
-//        middleMovingAverage.input(Float(tipMiddle.x))
-//
-//        if historyState >= isGesturingThreshold && gestureStartPositition == nil {
-//          // begin gesture
-//          gestureStartPositition = Float(tipMiddle.x + tipIndex.x) / 2
-//        }
-//      } catch {
-//        print(error.localizedDescription)
-//      }
     }
   }
   

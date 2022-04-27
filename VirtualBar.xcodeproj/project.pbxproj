@@ -9,12 +9,6 @@
 /* Begin PBXBuildFile section */
 		4F1336C52813AAAA004B4ECD /* GestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */; };
 		4F1336C72813C098004B4ECD /* VolumeControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1336C62813C098004B4ECD /* VolumeControl.swift */; };
-		4F1336D52813DF83004B4ECD /* brightness.c in Sources */ = {isa = PBXBuildFile; fileRef = 4F1336D42813DF83004B4ECD /* brightness.c */; settings = {COMPILER_FLAGS = "-Wl,-U,_CoreDisplay_Display_SetUserBrightness -Wl,-U,_CoreDisplay_Display_GetUserBrightness -Wl,-U,_DisplayServicesCanChangeBrightness -Wl,-U,_DisplayServicesBrightnessChanged -Wl,-U,_DisplayServicesGetBrightness -Wl,-U,_DisplayServicesSetBrightness "; }; };
-		4F1336D92813E3DE004B4ECD /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336D82813E3DE004B4ECD /* ApplicationServices.framework */; };
-		4F1336DB2813E47C004B4ECD /* DisplayServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336DA2813E47C004B4ECD /* DisplayServices.framework */; };
-		4F1336DC2813E47C004B4ECD /* DisplayServices.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336DA2813E47C004B4ECD /* DisplayServices.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		4F1336DF2813E4CC004B4ECD /* CoreDisplay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336DE2813E4CC004B4ECD /* CoreDisplay.framework */; };
-		4F1336E02813E4CC004B4ECD /* CoreDisplay.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336DE2813E4CC004B4ECD /* CoreDisplay.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4F2035CA2802BC8100F89CAE /* ImageMean.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BB2802BC8100F89CAE /* ImageMean.metal */; };
 		4F2035CB2802BC8100F89CAE /* FingerPointsRenderer.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */; };
 		4F2035CC2802BC8100F89CAE /* Renderable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035BD2802BC8100F89CAE /* Renderable.swift */; };
@@ -26,10 +20,16 @@
 		4F2035D52802BC8100F89CAE /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035C62802BC8100F89CAE /* Shaders.metal */; };
 		4F2035D62802BC8100F89CAE /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035C72802BC8100F89CAE /* Renderer.swift */; };
 		4F2035D72802BC8100F89CAE /* Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2035C92802BC8100F89CAE /* Helper.swift */; };
+		4F2CE3CA2818B09E001CAA60 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336D82813E3DE004B4ECD /* ApplicationServices.framework */; };
+		4F2CE3CB2818B0B5001CAA60 /* CoreDisplay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336DE2813E4CC004B4ECD /* CoreDisplay.framework */; };
+		4F2CE3CC2818B0D7001CAA60 /* DisplayServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F1336DA2813E47C004B4ECD /* DisplayServices.framework */; };
 		4F33FE1628115F800035937D /* ActiveAreaSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F33FE1528115F800035937D /* ActiveAreaSelector.swift */; };
 		4F33FE18281160690035937D /* ActiveAreaDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F33FE17281160690035937D /* ActiveAreaDetector.swift */; };
 		4F52CA162810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F52CA142810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift */; };
 		4F52CA172810E0E100EEB655 /* MovingAverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F52CA152810E0E100EEB655 /* MovingAverage.swift */; };
+		4F71E3B22818DB8E00F2B043 /* BrightnessControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F71E3B12818DB8E00F2B043 /* BrightnessControl.swift */; };
+		4FA2B0B12818DCDD0025A67E /* brightness.c in Sources */ = {isa = PBXBuildFile; fileRef = 4FA2B0B02818DBF00025A67E /* brightness.c */; };
+		4FA2B0B32818DD480025A67E /* LICENCE in Resources */ = {isa = PBXBuildFile; fileRef = 4FA2B0B22818DD480025A67E /* LICENCE */; };
 		4FA7E4BD2802C182005AC971 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA7E4BC2802C182005AC971 /* ContentView.swift */; };
 		4FB73A71280E9D5D00EE0311 /* Straighten.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB73A70280E9D5D00EE0311 /* Straighten.swift */; };
 		4FB73A73280EA1A300EE0311 /* Straighten.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4FB73A72280EA1A300EE0311 /* Straighten.metal */; };
@@ -44,36 +44,9 @@
 		4FFACD9328121DFA005CD815 /* VideoFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFACD9228121DFA005CD815 /* VideoFeed.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		4F1336CB2813DEDD004B4ECD /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-		4F1336DD2813E47C004B4ECD /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				4F1336E02813E4CC004B4ECD /* CoreDisplay.framework in Embed Frameworks */,
-				4F1336DC2813E47C004B4ECD /* DisplayServices.framework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
 		4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureRecognizer.swift; sourceTree = "<group>"; };
 		4F1336C62813C098004B4ECD /* VolumeControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeControl.swift; sourceTree = "<group>"; };
-		4F1336CD2813DEDD004B4ECD /* brightness */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = brightness; sourceTree = BUILT_PRODUCTS_DIR; };
-		4F1336D42813DF83004B4ECD /* brightness.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = brightness.c; sourceTree = "<group>"; };
-		4F1336D62813E038004B4ECD /* brightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = brightness.h; sourceTree = "<group>"; };
 		4F1336D82813E3DE004B4ECD /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
 		4F1336DA2813E47C004B4ECD /* DisplayServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DisplayServices.framework; path = ../../../../../System/Library/PrivateFrameworks/DisplayServices.framework; sourceTree = "<group>"; };
 		4F1336DE2813E4CC004B4ECD /* CoreDisplay.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreDisplay.framework; path = ../../../../../System/Library/Frameworks/CoreDisplay.framework; sourceTree = "<group>"; };
@@ -93,6 +66,11 @@
 		4F33FE17281160690035937D /* ActiveAreaDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveAreaDetector.swift; sourceTree = "<group>"; };
 		4F52CA142810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExponentialWeightedMovingAverage.swift; sourceTree = "<group>"; };
 		4F52CA152810E0E100EEB655 /* MovingAverage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MovingAverage.swift; sourceTree = "<group>"; };
+		4F71E3B02818D86000F2B043 /* BridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BridgingHeader.h; sourceTree = "<group>"; };
+		4F71E3B12818DB8E00F2B043 /* BrightnessControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessControl.swift; sourceTree = "<group>"; };
+		4FA2B0AF2818DBF00025A67E /* brightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = brightness.h; sourceTree = "<group>"; };
+		4FA2B0B02818DBF00025A67E /* brightness.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = brightness.c; sourceTree = "<group>"; };
+		4FA2B0B22818DD480025A67E /* LICENCE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENCE; sourceTree = "<group>"; };
 		4FA7E4BC2802C182005AC971 /* ContentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4FB73A70280E9D5D00EE0311 /* Straighten.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Straighten.swift; sourceTree = "<group>"; };
 		4FB73A72280EA1A300EE0311 /* Straighten.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Straighten.metal; sourceTree = "<group>"; };
@@ -110,35 +88,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		4F1336CA2813DEDD004B4ECD /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				4F1336D92813E3DE004B4ECD /* ApplicationServices.framework in Frameworks */,
-				4F1336DF2813E4CC004B4ECD /* CoreDisplay.framework in Frameworks */,
-				4F1336DB2813E47C004B4ECD /* DisplayServices.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		4FCB20A52802BBA0003DC9BC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F2CE3CA2818B09E001CAA60 /* ApplicationServices.framework in Frameworks */,
+				4F2CE3CB2818B0B5001CAA60 /* CoreDisplay.framework in Frameworks */,
+				4F2CE3CC2818B0D7001CAA60 /* DisplayServices.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		4F1336CE2813DEDD004B4ECD /* brightness */ = {
-			isa = PBXGroup;
-			children = (
-				4F1336D42813DF83004B4ECD /* brightness.c */,
-				4F1336D62813E038004B4ECD /* brightness.h */,
-			);
-			path = brightness;
-			sourceTree = "<group>";
-		};
 		4F1336D72813E3DE004B4ECD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -181,6 +143,17 @@
 			path = MovingAverage;
 			sourceTree = "<group>";
 		};
+		4FA2B0AE2818DBE90025A67E /* Brightness */ = {
+			isa = PBXGroup;
+			children = (
+				4FA2B0B02818DBF00025A67E /* brightness.c */,
+				4FA2B0B22818DD480025A67E /* LICENCE */,
+				4FA2B0AF2818DBF00025A67E /* brightness.h */,
+				4F71E3B12818DB8E00F2B043 /* BrightnessControl.swift */,
+			);
+			path = Brightness;
+			sourceTree = "<group>";
+		};
 		4FB88227280C1F3D009ADABB /* SwiftUI */ = {
 			isa = PBXGroup;
 			children = (
@@ -195,7 +168,6 @@
 			isa = PBXGroup;
 			children = (
 				4FCB20AA2802BBA0003DC9BC /* VirtualBar */,
-				4F1336CE2813DEDD004B4ECD /* brightness */,
 				4FCB20A92802BBA0003DC9BC /* Products */,
 				4F1336D72813E3DE004B4ECD /* Frameworks */,
 			);
@@ -205,7 +177,6 @@
 			isa = PBXGroup;
 			children = (
 				4FCB20A82802BBA0003DC9BC /* VirtualBar.app */,
-				4F1336CD2813DEDD004B4ECD /* brightness */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -213,10 +184,12 @@
 		4FCB20AA2802BBA0003DC9BC /* VirtualBar */ = {
 			isa = PBXGroup;
 			children = (
+				4FA2B0AE2818DBE90025A67E /* Brightness */,
 				4F1336C62813C098004B4ECD /* VolumeControl.swift */,
 				4FCB20AB2802BBA0003DC9BC /* VirtualBarApp.swift */,
 				4FB88227280C1F3D009ADABB /* SwiftUI */,
 				4F2035C82802BC8100F89CAE /* Common.h */,
+				4F71E3B02818D86000F2B043 /* BridgingHeader.h */,
 				4F2035C92802BC8100F89CAE /* Helper.swift */,
 				4FFACD9228121DFA005CD815 /* VideoFeed.swift */,
 				4F2035C72802BC8100F89CAE /* Renderer.swift */,
@@ -242,24 +215,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4F1336CC2813DEDD004B4ECD /* brightness */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 4F1336D12813DEDD004B4ECD /* Build configuration list for PBXNativeTarget "brightness" */;
-			buildPhases = (
-				4F1336C92813DEDD004B4ECD /* Sources */,
-				4F1336CA2813DEDD004B4ECD /* Frameworks */,
-				4F1336CB2813DEDD004B4ECD /* CopyFiles */,
-				4F1336DD2813E47C004B4ECD /* Embed Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = brightness;
-			productName = brightness;
-			productReference = 4F1336CD2813DEDD004B4ECD /* brightness */;
-			productType = "com.apple.product-type.tool";
-		};
 		4FCB20A72802BBA0003DC9BC /* VirtualBar */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4FCB20B72802BBA1003DC9BC /* Build configuration list for PBXNativeTarget "VirtualBar" */;
@@ -287,9 +242,6 @@
 				LastSwiftUpdateCheck = 1330;
 				LastUpgradeCheck = 1330;
 				TargetAttributes = {
-					4F1336CC2813DEDD004B4ECD = {
-						CreatedOnToolsVersion = 13.3.1;
-					};
 					4FCB20A72802BBA0003DC9BC = {
 						CreatedOnToolsVersion = 13.3;
 					};
@@ -309,7 +261,6 @@
 			projectRoot = "";
 			targets = (
 				4FCB20A72802BBA0003DC9BC /* VirtualBar */,
-				4F1336CC2813DEDD004B4ECD /* brightness */,
 			);
 		};
 /* End PBXProject section */
@@ -319,6 +270,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FA2B0B32818DD480025A67E /* LICENCE in Resources */,
 				4FCB20B32802BBA1003DC9BC /* Preview Assets.xcassets in Resources */,
 				4FCB20B02802BBA1003DC9BC /* Assets.xcassets in Resources */,
 			);
@@ -327,14 +279,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		4F1336C92813DEDD004B4ECD /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				4F1336D52813DF83004B4ECD /* brightness.c in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		4FCB20A42802BBA0003DC9BC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -355,12 +299,14 @@
 				4FD9CEBD28100F2500CF79E0 /* PlonkTexture.swift in Sources */,
 				4F1336C72813C098004B4ECD /* VolumeControl.swift in Sources */,
 				4F2035D72802BC8100F89CAE /* Helper.swift in Sources */,
+				4FA2B0B12818DCDD0025A67E /* brightness.c in Sources */,
 				4F2035D52802BC8100F89CAE /* Shaders.metal in Sources */,
 				4FD9CEBF2810100B00CF79E0 /* PlonkTexture.metal in Sources */,
 				4F2035D22802BC8100F89CAE /* Triangle.swift in Sources */,
 				4FCB20AC2802BBA0003DC9BC /* VirtualBarApp.swift in Sources */,
 				4F2035CE2802BC8100F89CAE /* Sphere.swift in Sources */,
 				4FB73A73280EA1A300EE0311 /* Straighten.metal in Sources */,
+				4F71E3B22818DB8E00F2B043 /* BrightnessControl.swift in Sources */,
 				4F2035D62802BC8100F89CAE /* Renderer.swift in Sources */,
 				4FB88226280C1ECE009ADABB /* ControlsView.swift in Sources */,
 				4F2035CD2802BC8100F89CAE /* Triangle.metal in Sources */,
@@ -372,36 +318,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		4F1336D22813DEDD004B4ECD /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 2M6L8JXTW7;
-				ENABLE_HARDENED_RUNTIME = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.3;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYSTEM_FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks",
-				);
-			};
-			name = Debug;
-		};
-		4F1336D32813DEDD004B4ECD /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 2M6L8JXTW7;
-				ENABLE_HARDENED_RUNTIME = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.3;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYSTEM_FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks",
-				);
-			};
-			name = Release;
-		};
 		4FCB20B52802BBA1003DC9BC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -541,7 +457,12 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.rioogino.virtualbar;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = VirtualBar/BridgingHeader.h;
 				SWIFT_VERSION = 5.0;
+				SYSTEM_FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks",
+				);
 			};
 			name = Debug;
 		};
@@ -569,22 +490,18 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.rioogino.virtualbar;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = VirtualBar/BridgingHeader.h;
 				SWIFT_VERSION = 5.0;
+				SYSTEM_FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks",
+				);
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4F1336D12813DEDD004B4ECD /* Build configuration list for PBXNativeTarget "brightness" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				4F1336D22813DEDD004B4ECD /* Debug */,
-				4F1336D32813DEDD004B4ECD /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		4FCB20A32802BBA0003DC9BC /* Build configuration list for PBXProject "VirtualBar" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

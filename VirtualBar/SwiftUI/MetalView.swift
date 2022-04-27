@@ -46,6 +46,18 @@ struct MetalView: View {
     MetalViewRepresentable(metalView: $metalView)
       .onAppear {
         renderer = Renderer(metalView: metalView)
+        
+        var displayId: CGDirectDisplayID = 0;
+        var displayService: io_service_t = 0;
+        let err = getInternalDisplayIdAndService(&displayId, &displayService);
+        if err != 0 {
+          print(err);
+        } 
+        var brightness: Float = -1;
+        print(getBrightness(displayId, displayService, &brightness))
+        print(brightness)
+        brightness = max(0, brightness - 0.1)
+        print(setBrightness(displayId, displayService, brightness))
         if useLiveCamera {
           checkCameraPermission()
         } else {

@@ -96,6 +96,7 @@ public class ActiveAreaSelector {
   var lockedCandidateId: UUID? = nil
   
   fileprivate static func sort(_ candidates: [CandidateAreaHistory]) -> [CandidateAreaHistory] {
+    // TODO somehow favour candidate areas with lower y value?
     // Brighter brightness -> larger is good
     let brightnessSort  = candidates.sorted(by: { $0.centerBrightness > $1.centerBrightness })
     if ONLY_USE_BRIGHTNESS_SORT {

@@ -2,6 +2,34 @@ import MetalKit
 import MetalPerformanceShaders
 
 
+final class FileHandleBuffer {
+  // https://stackoverflow.com/a/70006560
+  let fileHandle: FileHandle
+  let size: Int
+  private var buffer: Data
+  
+  init(fileHandle: FileHandle, size: Int = 1024 * 1024) {
+    self.fileHandle = fileHandle
+    self.size = size
+    self.buffer = Data(capacity: size)
+  }
+  
+  deinit { try! flush() }
+  
+  func flush() throws {
+    try fileHandle.write(contentsOf: buffer)
+    buffer = Data(capacity: size)
+  }
+  
+  func write(_ data: Data) throws {
+    buffer.append(data)
+    if buffer.count > size {
+      try flush()
+    }
+  }
+}
+
+
 public typealias float2 = SIMD2<Float>
 
 public class ImageMean: Renderable {
@@ -38,8 +66,25 @@ public class ImageMean: Renderable {
   
   public static var activeArea: [float2] = []
     
+  let fileUrl = URL.init(fileURLWithPath: "/Users/rioog/Documents/activearea.csv")
+  let buffer: FileHandleBuffer?
   init() {
     let textureLoader = MTKTextureLoader(device: Renderer.device)
+    
+    
+    var header = (0..<720).reduce("", { "\($0)\($1), " }) + "activeArea\n"
+
+    FileManager.default.createFile(atPath: fileUrl.path, contents: nil)
+    // Create the file if it does not yet exist
+
+    if let fileHandle = try? FileHandle(forWritingTo: fileUrl) {
+      buffer = FileHandleBuffer(fileHandle: fileHandle)
+      try? buffer!.write(header.data(using: .ascii)!)
+    } else {
+      buffer = nil
+    }
+    
+    
     do {
       _texture = try textureLoader.newTexture(
         name: "test", // File in .xcassets texture set
@@ -132,6 +177,7 @@ public class ImageMean: Renderable {
       float /= 255
       return dot(float, float) / 3
     }
+    
 
     let sizeRange = self.activeAreaHeightRange(imageHeight: texture.height)
     let candidateAreas = ActiveAreaDetector.detectCandidateAreas(
@@ -147,6 +193,9 @@ public class ImageMean: Renderable {
     if currentBestGuess == nil {
       Self.activeArea = []
     } else {
+      var line = squashOutputFloat.reduce("", { "\($0)\(String(format: "%.5f", $1)), " })
+      line += "\(currentBestGuess!.x2)\n"
+      try? buffer?.write(line.data(using: .ascii)!)
       Self.activeArea = activeAreaSelector.getAllAreasSorted().map {[
         $0[0] / Float(sobelOutputFloat.count),
         $0[1] / Float(sobelOutputFloat.count)

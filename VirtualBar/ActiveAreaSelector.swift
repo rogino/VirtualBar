@@ -73,13 +73,13 @@ private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
 
 public class ActiveAreaSelector {
   let LOG = true
-  static let ONLY_USE_COLOR_SORT = false
+  static let ONLY_USE_BRIGHTNESS_SORT = false
   static let ONLY_USE_DERIVATIVE_SORT = false
   
   fileprivate var candidates: [CandidateAreaHistory] = []
   
 
-  // For each sample in which the area is not found, the color tends to this value
+  // For each sample in which the area is not found, the brightness tends to this value
   let brightnessTendsTo: Float = 0
   let weightedAverageTendsTo: Float = 0.001
   
@@ -96,11 +96,11 @@ public class ActiveAreaSelector {
   var lockedCandidateId: UUID? = nil
   
   fileprivate static func sort(_ candidates: [CandidateAreaHistory]) -> [CandidateAreaHistory] {
-    // Brighter color -> larger is good
-    let colorSort  = candidates.sorted(by: { $0.centerBrightness > $1.centerBrightness })
-    if ONLY_USE_COLOR_SORT {
+    // Brighter brightness -> larger is good
+    let brightnessSort  = candidates.sorted(by: { $0.centerBrightness > $1.centerBrightness })
+    if ONLY_USE_BRIGHTNESS_SORT {
       print("WARNING: ONLY USING BRIGHTNESS FOR RANKING")
-      return colorSort
+      return brightnessSort
     }
     
     // Lower averaged weighted derivative -> smaller is good
@@ -111,14 +111,14 @@ public class ActiveAreaSelector {
       return weightSort
     }
     
-    // Sum the color and weight indexes, find the lowest
-    let indexSumSort: [(weightIndex: Int, colorIndex: Int, sum: Int)] = colorSort.enumerated().map { (i, val) in
+    // Sum the brightness and weight indexes, find the lowest
+    let indexSumSort: [(weightIndex: Int, brightnessIndex: Int, sum: Int)] = brightnessSort.enumerated().map { (i, val) in
       let weightIndex = weightSort.firstIndex(where: { $0.x1 == val.x1 })!
-      return (weightIndex: weightIndex, colorIndex: i, sum: weightIndex + i)
-    }.sorted(by: { $0.sum == $1.sum ? $0.colorIndex < $1.colorIndex : $0.sum < $1.sum })
-    // If sum of indices are the same, prefer color over weight
+      return (weightIndex: weightIndex, brightnessIndex: i, sum: weightIndex + i)
+    }.sorted(by: { $0.sum == $1.sum ? $0.brightnessIndex < $1.brightnessIndex : $0.sum < $1.sum })
+    // If sum of indices are the same, prefer brightness over weight
     
-    let sortedMatches: [CandidateAreaHistory] = indexSumSort.enumerated().map { colorSort[$1.colorIndex] }
+    let sortedMatches: [CandidateAreaHistory] = indexSumSort.enumerated().map { brightnessSort[$1.brightnessIndex] }
     
     return sortedMatches
   }
@@ -211,7 +211,7 @@ public class ActiveAreaSelector {
       }
       if current.centerBrightness < minBrightness {
         if LOG {
-          print("Removal, color:", candidates[i])
+          print("Removal, brightness:", candidates[i])
         }
         candidates.remove(at: i)
       } else if current.weightedAveragedDerivative > maxWeightedAveragedDerivative {

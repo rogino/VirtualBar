@@ -38,7 +38,6 @@ private class CandidateAreaHistory: CustomStringConvertible {
   var size: Float { x2 - x1 }
   var center: Float { (x1 + x2) / 2 }
   
-  
   // Rank multiplier: when area shows up, don't want it to just immediately go to top
   init(initial: CandidateArea, rankMultiplier: Float = 1.0) {
     x1MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.x1))
@@ -61,7 +60,7 @@ private class CandidateAreaHistory: CustomStringConvertible {
   
   
   var description: String {
-    return String(format: "[%.2f to %.2f], brightness %.1f, weight %.7f", x1, x2, centerBrightness, weightedAveragedDerivative)
+    return String(format: "[%.2f to %.2f], brightness %.3f, weight %.7f", x1, x2, centerBrightness, weightedAveragedDerivative)
   }
   
 }

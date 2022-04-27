@@ -179,21 +179,26 @@ bool getBrightness(CGDirectDisplayID dspy, io_service_t service,
 
 
 int getInternalDisplayIdAndService(CGDirectDisplayID* id, io_service_t* service) {
-  CGDirectDisplayID displays[1];
+  CGDirectDisplayID displays[kMaxDisplays];
   CGDisplayCount numDisplays;
   CGDisplayErr err;
-  err = CGGetOnlineDisplayList(1, displays, &numDisplays);
+  err = CGGetOnlineDisplayList(kMaxDisplays, displays, &numDisplays);
   if (err != CGDisplayNoErr) {
     return -1;
   }
   
-  if (numDisplays < 1) {
-    return -2;
+  for (int i = 0; i < numDisplays; i++) {
+    if (CGDisplayIsBuiltin(displays[i])) {
+      CGDirectDisplayID display = displays[i];
+      if (!CGDisplayIsOnline(display)) {
+        break;
+      }
+      *id = display;
+      *service = CGDisplayGetIOServicePort(display);
+      return 0;
+    }
   }
   
-  CGDirectDisplayID display = displays[0];
-  *id = display;
-  *service = CGDisplayGetIOServicePort(display);
   
-  return 0;
+  return -2;
 }

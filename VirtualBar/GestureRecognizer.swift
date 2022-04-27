@@ -7,67 +7,69 @@
 
 import Vision
 
+
+public enum GestureType: CaseIterable {
+  // In reverse order of priority
+  case none, two, three
+}
+
+enum GestureChange {
+  case noChange, begin, end
+}
+
+struct GestureState {
+  let historySize: Int = 6
+  let startThreshold: Int = 4
+  let stopThreshold: Int = 3
+  
+  var startPosition: Float? = nil
+  var history: [GestureType] = []
+  var gestureType: GestureType = .none
+  // To start a gesture, at least {startThreshold} out of the previous {historySize} frames must
+  // have detected two (or three) fingers. To end, {stopThreshold} frames in the history must be
+  // .none
+  
+  mutating func tick(detected: GestureType, startPosition: Float? = nil) -> GestureChange {
+    history.append(detected)
+    
+    if history.count > historySize {
+      history.removeFirst()
+    }
+    
+    let counts: [GestureType: Int] = Dictionary(history.map({ ($0, 1) }), uniquingKeysWith: { $0 + $1 })
+    
+    var stateChange: GestureChange = .noChange
+    
+    if gestureType == .none {
+      // May need to start the gesture now
+      for gesture in GestureType.allCases.reversed().filter({ $0 != .none }) {
+        if (counts[gesture] ?? 0) >= startThreshold {
+          gestureType = gesture
+          stateChange = .begin
+          self.startPosition = startPosition
+          break
+        }
+      }
+    } else {
+      // Too many non-gesture frames detected
+      if (counts[.none] ?? 0) >= stopThreshold {
+        gestureType = .none
+        stateChange = .end
+        self.startPosition = nil
+      }
+    }
+    
+    return stateChange
+  }
+}
+
 /**
-In first m frames, if n of them have three fingers then three finger gesture. Else if n of them have two fingers, then two finger gesture. Initialize start position then
+ In first m frames, if n of them have three fingers then three finger gesture. Else if n of them have two fingers, then two finger gesture. Initialize start position then
  
-If fewer than n out of m ticks contain two fingers (even if three finger gesture), then end the gesture and reset state
+ If fewer than n out of m ticks contain two fingers (even if three finger gesture), then end the gesture and reset state
  */
 
 public class GestureRecognizer {
-  enum GestureType: CaseIterable {
-    // In reverse order of priority
-    case none, two, three
-  }
-  
-  enum GestureChange {
-    case noChange, begin, end
-  }
-  
-  struct GestureState {
-    let historySize: Int = 6
-    let startThreshold: Int = 4
-    let stopThreshold: Int = 3
-    
-    var startPosition: Float? = nil
-    var history: [GestureType] = []
-    var gestureType: GestureType = .none
-    // To start a gesture, at least {startThreshold} out of the previous {historySize} frames must
-    // have detected two (or three) fingers. To end, {stopThreshold} frames in the history must be
-    // .none
-    
-    mutating func tick(detected: GestureType, startPosition: Float? = nil) -> GestureChange {
-      history.append(detected)
-      
-      if history.count > historySize {
-        history.removeFirst()
-      }
-      
-      let counts: [GestureType: Int] = Dictionary(history.map({ ($0, 1) }), uniquingKeysWith: { $0 + $1 })
-      
-      var stateChange: GestureChange = .noChange
-      
-      if gestureType == .none {
-        // May need to start the gesture now
-        for gesture in GestureType.allCases.reversed().filter({ $0 != .none }) {
-          if (counts[gesture] ?? 0) >= startThreshold {
-            gestureType = gesture
-            stateChange = .begin
-            self.startPosition = startPosition
-            break
-          }
-        }
-      } else {
-        // Too many non-gesture frames detected
-        if (counts[.none] ?? 0) >= stopThreshold {
-          gestureType = .none
-          stateChange = .end
-          self.startPosition = nil
-        }
-      }
-      
-      return stateChange
-    }
-  }
   
   var gestureState: GestureState
   
@@ -77,9 +79,9 @@ public class GestureRecognizer {
   var   ringMovingAverage: MovingAverage
   
   init() {
-     indexMovingAverage = ExponentialWeightedMovingAverage(alpha: movingAverageAlpha)
+    indexMovingAverage = ExponentialWeightedMovingAverage(alpha: movingAverageAlpha)
     middleMovingAverage = ExponentialWeightedMovingAverage(alpha: movingAverageAlpha)
-      ringMovingAverage = ExponentialWeightedMovingAverage(alpha: movingAverageAlpha)
+    ringMovingAverage = ExponentialWeightedMovingAverage(alpha: movingAverageAlpha)
     
     gestureState = GestureState()
   }
@@ -107,13 +109,14 @@ public class GestureRecognizer {
     }
   }
   
-  public func output() -> Float? {
-    guard let currentPosition = currentPosition,
-          let startPosition = gestureState.startPosition
-    else {
-      return nil
+  public func output() -> (type: GestureType, delta: Float?) {
+    var delta: Float? = nil
+    if let currentPosition = currentPosition,
+       let startPosition = gestureState.startPosition {
+      delta = currentPosition - startPosition
     }
-    return currentPosition - startPosition
+    
+    return (type: gestureState.gestureType, delta: delta)
   }
   
   
@@ -176,7 +179,7 @@ public class GestureRecognizer {
             detectedGesture = .three
             position = averageX([.indexTip, .middleTip, .ringTip])
           }
-          print(Float(indexMiddleAvgY - ringY), detectedGesture)
+//          print(Float(indexMiddleAvgY - ringY), detectedGesture)
         }
       }
       
@@ -211,7 +214,7 @@ public class GestureRecognizer {
   }
   
   func isRightHand(hand: VNHumanHandPoseObservation) -> Bool? {
-//    if
+    //    if
     return nil
   }
 }

@@ -189,10 +189,15 @@ class FingerDetector {
   var volumeControl: VolumeControl?
   var volumeScale: Float = 3.0
   
+  var brightness: Float? = nil
+  var brightnessControl: BrightnessControl?
+  var brightnessScale: Float = 3.0
+  
   init() {
     handPoseRequest.maximumHandCount = 2
     do {
       volumeControl = try VolumeControl()
+      brightnessControl = try BrightnessControl()
     } catch {
       print(error.localizedDescription)
     }
@@ -256,11 +261,18 @@ class FingerDetector {
       
       let prev = gestureRecognizer.output()
       gestureRecognizer.input(results, activeAreaBottom: 1 - (activeArea.y - activeAreaTop) / (1 - activeAreaTop))
-      if let delta = gestureRecognizer.output() {
-        if prev == nil {
+      let (gesture, delta) = gestureRecognizer.output()
+      if let delta = delta {
+        if prev.type == .none {
+          // gesture began: get current state
           volume = volumeControl?.getVolume()
+          brightness = try? brightnessControl?.get()
         } else {
-          volumeControl?.setVolume(volume: volume! + delta * volumeScale)
+          if gesture == .two {
+            volumeControl?.setVolume(volume: volume! + delta * volumeScale)
+          } else if gesture == .three && brightness != nil {
+            try? brightnessControl?.set(brightness: brightness! + delta * brightnessScale)
+          }
         }
         
         points.append(SIMD3<Float>(

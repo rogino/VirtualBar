@@ -38,7 +38,7 @@ struct MetalView: View {
   @State private var metalView = MTKView()
   @State private var renderer: Renderer?
  
-  let useLiveCamera = false
+  let useLiveCamera = true
   @State private var captureSession = AVCaptureSession()
   @State private var videoFeed: VideoFeed?
 
@@ -51,7 +51,8 @@ struct MetalView: View {
           checkCameraPermission()
         } else {
           videoFeed = VideoFeed(
-            renderer: renderer!
+            renderer: renderer!,
+            videoPath: "/Users/rioog/Documents/MetalTutorial/virtualbar/hand_gesture_data/Movie on 27-04-22 at 17.20.mov"
           )
         }
       }.onDisappear {

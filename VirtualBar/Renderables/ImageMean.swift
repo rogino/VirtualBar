@@ -66,24 +66,25 @@ public class ImageMean: Renderable {
   
   public static var activeArea: [float2] = []
     
+  let write = false
   let fileUrl = URL.init(fileURLWithPath: "/Users/rioog/Documents/activearea.csv")
-  let buffer: FileHandleBuffer?
+  var buffer: FileHandleBuffer? = nil
+  
   init() {
     let textureLoader = MTKTextureLoader(device: Renderer.device)
     
     
-    var header = (0..<720).reduce("", { "\($0)\($1), " }) + "activeArea\n"
+    if write {
+      let header = (0..<720).reduce("", { "\($0)\($1), " }) + "activeArea\n"
 
-    FileManager.default.createFile(atPath: fileUrl.path, contents: nil)
-    // Create the file if it does not yet exist
+      FileManager.default.createFile(atPath: fileUrl.path, contents: nil)
+      // Create the file if it does not yet exist
 
-    if let fileHandle = try? FileHandle(forWritingTo: fileUrl) {
-      buffer = FileHandleBuffer(fileHandle: fileHandle)
-      try? buffer!.write(header.data(using: .ascii)!)
-    } else {
-      buffer = nil
+      if let fileHandle = try? FileHandle(forWritingTo: fileUrl) {
+        buffer = FileHandleBuffer(fileHandle: fileHandle)
+        try? buffer!.write(header.data(using: .ascii)!)
+      }
     }
-    
     
     do {
       _texture = try textureLoader.newTexture(
@@ -178,6 +179,17 @@ public class ImageMean: Renderable {
       return dot(float, float) / 3
     }
     
+    if sobelOutputFloat.count == 720 {
+      do {
+        let input: Sobel1Input = Sobel1Input(sobel: sobelOutputFloat)
+        let bottom = Float(try Sobel1(configuration: .init()).prediction(input: input).activeArea)
+        print(bottom)
+        Self.activeArea = [[max((bottom - 30), 0) / 720, (bottom) / 720.0]]
+        return
+      } catch {
+        print(error.localizedDescription)
+      }
+    }
 
     let sizeRange = self.activeAreaHeightRange(imageHeight: texture.height)
     let candidateAreas = ActiveAreaDetector.detectCandidateAreas(
@@ -187,15 +199,18 @@ public class ImageMean: Renderable {
       sizeRange: sizeRange
     )
     
+    
     activeAreaSelector.update(candidates: candidateAreas, sizeRange: sizeRange)
     let currentBestGuess = activeAreaSelector.getActiveArea()
     
     if currentBestGuess == nil {
       Self.activeArea = []
     } else {
-      var line = squashOutputFloat.reduce("", { "\($0)\(String(format: "%.5f", $1)), " })
-      line += "\(currentBestGuess!.x2)\n"
-      try? buffer?.write(line.data(using: .ascii)!)
+      if write && sobelOutputFloat.count == 720 {
+        var line = sobelOutputFloat.reduce("", { "\($0)\(String(format: "%.8f", $1)), " })
+        line += "\(currentBestGuess!.x2)\n"
+        try? buffer?.write(line.data(using: .ascii)!)
+      }
       Self.activeArea = activeAreaSelector.getAllAreasSorted().map {[
         $0[0] / Float(sobelOutputFloat.count),
         $0[1] / Float(sobelOutputFloat.count)
@@ -203,6 +218,7 @@ public class ImageMean: Renderable {
       ]}
     }
   }
+  
   
   // Copies single column image from MTLTexture to a CPU buffer with the correct amount of memory allocated
   static func copyTexture(source: MTLTexture, destination: UnsafeMutablePointer<SIMD4<UInt8>>) {

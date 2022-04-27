@@ -117,7 +117,7 @@ extension Renderer: MTKViewDelegate {
   func processFrame(texture: MTLTexture, cmSample: CMSampleBuffer) {
     self.cameraTexture = texture
     self.straightenedCameraTexture = straightener.straighten(image: texture)
-    fingerPoints = fingerDetector.detectFingers(sampleBuffer: cmSample)
+//    fingerPoints = fingerDetector.detectFingers(sampleBuffer: cmSample)
     
     self.imageMean.texture = straightenedCameraTexture
     self.fingerPointsRenderer.fingerPoints = fingerPoints
@@ -126,7 +126,7 @@ extension Renderer: MTKViewDelegate {
   func processFrame(texture: MTLTexture, cgImage: CGImage) {
     self.cameraTexture = texture
     self.straightenedCameraTexture = straightener.straighten(image: texture)
-    fingerPoints = fingerDetector.detectFingers(image: cgImage)
+//    fingerPoints = fingerDetector.detectFingers(image: cgImage)
     
     self.imageMean.texture = straightenedCameraTexture
     self.fingerPointsRenderer.fingerPoints = fingerPoints

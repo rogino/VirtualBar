@@ -72,7 +72,7 @@ private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
 }
 
 public class ActiveAreaSelector {
-  let LOG = true
+  let LOG = false
   static let ONLY_USE_BRIGHTNESS_SORT = false
   static let ONLY_USE_DERIVATIVE_SORT = false
   

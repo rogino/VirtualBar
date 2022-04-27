@@ -29,6 +29,9 @@
 		4F52CA172810E0E100EEB655 /* MovingAverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F52CA152810E0E100EEB655 /* MovingAverage.swift */; };
 		4F71E3B22818DB8E00F2B043 /* BrightnessControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F71E3B12818DB8E00F2B043 /* BrightnessControl.swift */; };
 		4FA1970E2819283600F96355 /* FingerDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA1970D2819283600F96355 /* FingerDetector.swift */; };
+		4FA1971028193BBC00F96355 /* ActiveAreaBottomDetectorModel2.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4FA1970F28193BBC00F96355 /* ActiveAreaBottomDetectorModel2.mlmodel */; };
+		4FA1971428195A2500F96355 /* Ahhhhh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA1971328195A2500F96355 /* Ahhhhh.swift */; };
+		4FA1971628195C3800F96355 /* Sobel1.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4FA1971528195C3800F96355 /* Sobel1.mlmodel */; };
 		4FA2B0B12818DCDD0025A67E /* brightness.c in Sources */ = {isa = PBXBuildFile; fileRef = 4FA2B0B02818DBF00025A67E /* brightness.c */; };
 		4FA2B0B32818DD480025A67E /* LICENCE in Resources */ = {isa = PBXBuildFile; fileRef = 4FA2B0B22818DD480025A67E /* LICENCE */; };
 		4FA7E4BD2802C182005AC971 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA7E4BC2802C182005AC971 /* ContentView.swift */; };
@@ -70,6 +73,9 @@
 		4F71E3B02818D86000F2B043 /* BridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BridgingHeader.h; sourceTree = "<group>"; };
 		4F71E3B12818DB8E00F2B043 /* BrightnessControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessControl.swift; sourceTree = "<group>"; };
 		4FA1970D2819283600F96355 /* FingerDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerDetector.swift; sourceTree = "<group>"; };
+		4FA1970F28193BBC00F96355 /* ActiveAreaBottomDetectorModel2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = ActiveAreaBottomDetectorModel2.mlmodel; sourceTree = "<group>"; };
+		4FA1971328195A2500F96355 /* Ahhhhh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ahhhhh.swift; sourceTree = "<group>"; };
+		4FA1971528195C3800F96355 /* Sobel1.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = Sobel1.mlmodel; sourceTree = "<group>"; };
 		4FA2B0AF2818DBF00025A67E /* brightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = brightness.h; sourceTree = "<group>"; };
 		4FA2B0B02818DBF00025A67E /* brightness.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = brightness.c; sourceTree = "<group>"; };
 		4FA2B0B22818DD480025A67E /* LICENCE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENCE; sourceTree = "<group>"; };
@@ -195,6 +201,9 @@
 				4F2035C92802BC8100F89CAE /* Helper.swift */,
 				4FFACD9228121DFA005CD815 /* VideoFeed.swift */,
 				4F2035C72802BC8100F89CAE /* Renderer.swift */,
+				4FA1970F28193BBC00F96355 /* ActiveAreaBottomDetectorModel2.mlmodel */,
+				4FA1971528195C3800F96355 /* Sobel1.mlmodel */,
+				4FA1971328195A2500F96355 /* Ahhhhh.swift */,
 				4FA1970D2819283600F96355 /* FingerDetector.swift */,
 				4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */,
 				4F2035BA2802BC8100F89CAE /* Renderables */,
@@ -288,6 +297,7 @@
 			files = (
 				4F2035CB2802BC8100F89CAE /* FingerPointsRenderer.metal in Sources */,
 				4F52CA172810E0E100EEB655 /* MovingAverage.swift in Sources */,
+				4FA1971428195A2500F96355 /* Ahhhhh.swift in Sources */,
 				4FA1970E2819283600F96355 /* FingerDetector.swift in Sources */,
 				4F33FE18281160690035937D /* ActiveAreaDetector.swift in Sources */,
 				4FD9CEC12810112E00CF79E0 /* PlonkTextureShared.metal in Sources */,
@@ -301,8 +311,10 @@
 				4F2035CC2802BC8100F89CAE /* Renderable.swift in Sources */,
 				4F52CA162810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift in Sources */,
 				4FD9CEBD28100F2500CF79E0 /* PlonkTexture.swift in Sources */,
+				4FA1971028193BBC00F96355 /* ActiveAreaBottomDetectorModel2.mlmodel in Sources */,
 				4F1336C72813C098004B4ECD /* VolumeControl.swift in Sources */,
 				4F2035D72802BC8100F89CAE /* Helper.swift in Sources */,
+				4FA1971628195C3800F96355 /* Sobel1.mlmodel in Sources */,
 				4FA2B0B12818DCDD0025A67E /* brightness.c in Sources */,
 				4F2035D52802BC8100F89CAE /* Shaders.metal in Sources */,
 				4FD9CEBF2810100B00CF79E0 /* PlonkTexture.metal in Sources */,

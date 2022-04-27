@@ -13,7 +13,7 @@ class Renderer: NSObject {
   
   var renderables: [Renderable] = []
   
-  let fingerDetector = FingerDetector()
+  let fingerDetector: FingerDetector
   var fingerPoints: [simd_float3] = []
   
   static var aspect: Float = 1.0
@@ -48,6 +48,8 @@ class Renderer: NSObject {
     self.straightener = Straighten()
     self.imageMean = ImageMean()
     self.fingerPointsRenderer = FingerPointsRenderer()
+    
+    self.fingerDetector = FingerDetector(activeAreaSelector: imageMean.activeAreaSelector)
     
     super.init()
     metalView.delegate = self
@@ -193,7 +195,10 @@ class FingerDetector {
   var brightnessControl: BrightnessControl?
   var brightnessScale: Float = 3.0
   
-  init() {
+  var activeAreaSelector: ActiveAreaSelector
+  
+  init(activeAreaSelector: ActiveAreaSelector) {
+    self.activeAreaSelector = activeAreaSelector
     handPoseRequest.maximumHandCount = 2
     do {
       volumeControl = try VolumeControl()
@@ -262,11 +267,17 @@ class FingerDetector {
       let prev = gestureRecognizer.output()
       gestureRecognizer.input(results, activeAreaBottom: 1 - (activeArea.y - activeAreaTop) / (1 - activeAreaTop))
       let (gesture, delta) = gestureRecognizer.output()
+      
+      if gesture == .none {
+        activeAreaSelector.unlockCurrentTopCandidate()
+      }
+      
       if let delta = delta {
         if prev.type == .none {
           // gesture began: get current state
           volume = volumeControl?.getVolume()
           brightness = try? brightnessControl?.get()
+          activeAreaSelector.lockCurrentTopCandidate()
         } else {
           if gesture == .two {
             volumeControl?.setVolume(volume: volume! + delta * volumeScale)

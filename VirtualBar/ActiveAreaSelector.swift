@@ -24,7 +24,7 @@ public struct CandidateArea: CustomStringConvertible {
 }
 
 
-private class CandidateAreaHistory: CustomStringConvertible {
+private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
   let x1MovingAverage: MovingAverage
   let x2MovingAverage: MovingAverage
   let centerBrightnessAverage: MovingAverage
@@ -38,12 +38,18 @@ private class CandidateAreaHistory: CustomStringConvertible {
   var size: Float { x2 - x1 }
   var center: Float { (x1 + x2) / 2 }
   
+  var xAlpha: Float = 0.05
+  var centerBrightnessAlpha: Float = 0.05
+  var weightedAveragedDerivativeAlpha: Float = 0.05
+  
+  let id = UUID()
+  
   // Rank multiplier: when area shows up, don't want it to just immediately go to top
   init(initial: CandidateArea, rankMultiplier: Float = 1.0) {
-    x1MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.x1))
-    x2MovingAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.x2))
-    centerBrightnessAverage           = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.centerBrightness))
-    weightedAveragedDerivativeAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 0, initialValue: Float(initial.weightedAveragedDerivative))
+    x1MovingAverage = ExponentialWeightedMovingAverage(alpha: xAlpha, initialValue: Float(initial.x1))
+    x2MovingAverage = ExponentialWeightedMovingAverage(alpha: xAlpha, initialValue: Float(initial.x2))
+    centerBrightnessAverage           = ExponentialWeightedMovingAverage(alpha: centerBrightnessAlpha, initialValue: Float(initial.centerBrightness))
+    weightedAveragedDerivativeAverage = ExponentialWeightedMovingAverage(alpha: weightedAveragedDerivativeAlpha, initialValue: Float(initial.weightedAveragedDerivative))
   }
   
   func update(update: CandidateArea) {
@@ -66,7 +72,9 @@ private class CandidateAreaHistory: CustomStringConvertible {
 }
 
 public class ActiveAreaSelector {
-  let LOG = false
+  let LOG = true
+  static let ONLY_USE_COLOR_SORT = false
+  static let ONLY_USE_DERIVATIVE_SORT = false
   
   fileprivate var candidates: [CandidateAreaHistory] = []
   
@@ -77,24 +85,31 @@ public class ActiveAreaSelector {
   
   let initialRankMultiplier: Float = 5.0
   
-  // Remove candidate areas after this point
-  let maxRank: Float = 50
- 
   // Areas can be += existing areas
-  let maxDeviation: Float = 5
+  let maxCenterPositionDeviation: Float = 5
   
   let maxNumCandidates: Int = 4
   
   let maxWeightedAveragedDerivative: Float = 1e-4
-  let minBrightness: Float = 0.3
+  let minBrightness: Float = 0.1
   
+  var lockedCandidateId: UUID? = nil
   
   fileprivate static func sort(_ candidates: [CandidateAreaHistory]) -> [CandidateAreaHistory] {
     // Brighter color -> larger is good
     let colorSort  = candidates.sorted(by: { $0.centerBrightness > $1.centerBrightness })
+    if ONLY_USE_COLOR_SORT {
+      print("WARNING: ONLY USING BRIGHTNESS FOR RANKING")
+      return colorSort
+    }
     
     // Lower averaged weighted derivative -> smaller is good
     let weightSort = candidates.sorted(by: { $0.weightedAveragedDerivative < $1.weightedAveragedDerivative })
+    
+    if ONLY_USE_DERIVATIVE_SORT {
+      print("WARNING: ONLY USING DERIVATIVE FOR RANKING")
+      return weightSort
+    }
     
     // Sum the color and weight indexes, find the lowest
     let indexSumSort: [(weightIndex: Int, colorIndex: Int, sum: Int)] = colorSort.enumerated().map { (i, val) in
@@ -108,6 +123,20 @@ public class ActiveAreaSelector {
     return sortedMatches
   }
   
+  fileprivate static func moveLockedCandidateToTop(_ candidates: inout [CandidateAreaHistory], lockedCandidateId: UUID?) {
+    guard let lockedCandidateId = lockedCandidateId else {
+      return
+    }
+    
+    let lockedCandidate = candidates.enumerated().first(where: { $0.element.id == lockedCandidateId })
+    assert(lockedCandidate != nil)
+    let index = lockedCandidate!.offset
+    if index != 0 {
+      candidates.remove(at: index)
+      candidates.insert(lockedCandidate!.element, at: 0)
+    }
+  }
+  
   func update(candidates newCandidates: [CandidateArea], sizeRange: ClosedRange<Int>?) {
     var sortedCandidates = newCandidates.sorted(by: { $0.center < $1.center })
     
@@ -119,7 +148,7 @@ public class ActiveAreaSelector {
     }
     
     for current in candidates {
-      let index = sortedCandidates.firstIndex(where: { current.center - maxDeviation < $0.center && $0.center < current.center + maxDeviation })
+      let index = sortedCandidates.firstIndex(where: { current.center - maxCenterPositionDeviation < $0.center && $0.center < current.center + maxCenterPositionDeviation })
       if (index == nil) {
         current.notFound(brightnessTendsTo: brightnessTendsTo, weightedAverageTendsTo: weightedAverageTendsTo)
         continue
@@ -142,13 +171,17 @@ public class ActiveAreaSelector {
    
     // Sorted by rank, best first
     candidates = Self.sort(candidates)
+    if LOG && lockedCandidateId != nil {
+      print("Locked candidate native rank: \(candidates.enumerated().first(where: { $0.element.id == lockedCandidateId })?.offset.description ?? "WARNING: LOCKED CANDIDATE NOT FOUND")")
+    }
+    Self.moveLockedCandidateToTop(&candidates, lockedCandidateId: lockedCandidateId)
     
     // Cut down number of candidates
     if candidates.count > maxNumCandidates {
       if LOG {
         print("Removed \(candidates.count - maxNumCandidates) worst candidates")
       }
-      candidates = Array(candidates[0..<maxNumCandidates])
+      candidates.removeLast(candidates.count - maxNumCandidates)
     }
     
     removeBadCandidates(sizeRange: sizeRange == nil ? nil: Float(sizeRange!.lowerBound)...Float(sizeRange!.upperBound))
@@ -159,6 +192,7 @@ public class ActiveAreaSelector {
       candidates.enumerated().forEach { print($0, $1) }
     }
   }
+  
   
   private func removeBadCandidates(sizeRange: ClosedRange<Float>?) {
     // Remove candidates where the size is not within the range,
@@ -171,6 +205,10 @@ public class ActiveAreaSelector {
         break
       }
       let current = candidates[i]
+      if lockedCandidateId != nil && lockedCandidateId == current.id {
+        i += 1
+        continue
+      }
       if current.centerBrightness < minBrightness {
         if LOG {
           print("Removal, color:", candidates[i])
@@ -235,5 +273,26 @@ public class ActiveAreaSelector {
   
   func getAllAreasSorted() -> [SIMD2<Float>] {
     return candidates.map { SIMD2<Float>( $0.x1, $0.x2 )}
+  }
+  
+  // Prevent top candidate from being changed
+  func lockCurrentTopCandidate() {
+    lockedCandidateId = candidates.first?.id
+    if LOG && candidates.first != nil {
+      print("Locking current top candidate, \(candidates.first!)")
+    }
+  }
+  
+  
+  func unlockCurrentTopCandidate() {
+    if lockedCandidateId == nil {
+      return
+    }
+    if LOG {
+      assert(candidates.first != nil && candidates.first!.id == lockedCandidateId)
+      print("Unlocking current top candidate, \(candidates.first!)")
+    }
+    lockedCandidateId = nil
+    candidates = Self.sort(candidates)
   }
 }

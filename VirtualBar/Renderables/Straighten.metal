@@ -54,11 +54,16 @@ kernel void straighten_left_right_delta_squared(
   
   half4 left  =  leftAvg.read(ushort2(0, yLeft ));
   half4 right = rightAvg.read(ushort2(0, yRight));
-  float4 diff = float4(left - right);
-  diff.w = 0;
-  float deltaSqured = dot(diff, diff) / 3; // 3 components so divide by 3 to cap to 1
   
-  delta.write(deltaSqured, pid.yx); // y is image y axis, x is i
+  // Find difference as a *proportion* of the larger value, not absolute
+  // (0.1, 0.2) is bigger error than (0.8, 0.9)
+  float3 diff = float3(left.xyz) - float3(right.xyz);
+  float diffSquared = dot(diff, diff);
+  
+  float3 larger = length(left) > length(right) ? float3(left.xyz): float3(right.xyz);
+  float denominator = dot(larger, larger);
+  
+  delta.write(diffSquared/denominator, pid.yx); // y is image y axis, x is i
 }
 
 

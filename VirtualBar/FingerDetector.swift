@@ -20,7 +20,7 @@ class FingerDetector {
   
   var brightness: Float? = nil
   var brightnessControl: BrightnessControl?
-  var brightnessScale: Float = 3.0
+  var brightnessScale: Float = 5.0
   
   var activeAreaSelector: ActiveAreaSelector
   

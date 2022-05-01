@@ -37,16 +37,13 @@ public class Straighten {
     )
   }
   
-  var    leftSampleTexture: MTLTexture?
-  var   rightSampleTexture: MTLTexture?
-  var  leftAveragedTexture: MTLTexture?
-  var rightAveragedTexture: MTLTexture?
+  var       rowMeanTexture: MTLTexture?
   var         deltaTexture: MTLTexture?
   var deltaAveragedTexture: MTLTexture?
   var deltaAveragedCPU: UnsafeMutablePointer<Float>?
   var    straightenedImage: MTLTexture?
   
-  var straightenCopyPSO: MTLComputePipelineState
+  var straightenMeanPSO: MTLComputePipelineState
   var straightenDeltaSquaredPSO: MTLComputePipelineState
   var rowSquashEncoder: MPSUnaryImageKernel
   var colSquashEncoder: MPSUnaryImageKernel
@@ -62,21 +59,21 @@ public class Straighten {
     
   init() {
     straightenOutputPSO = Self.makeStraightenOutputPSO()
-    straightenCopyPSO = Self.makeStraightenCopyPSO()
+    straightenMeanPSO = Self.makeStraightenMeanPSO()
     straightenDeltaSquaredPSO = Self.makeStraightenDeltaSquaredPSO()
     rowSquashEncoder = MPSImageReduceRowMean(device: Renderer.device)
     colSquashEncoder = MPSImageReduceColumnMean(device: Renderer.device)
   }
   
-  
-  static func makeStraightenCopyPSO() -> MTLComputePipelineState {
+  static func makeStraightenMeanPSO() -> MTLComputePipelineState {
     do {
-      guard let function = Renderer.library.makeFunction(name: "straighten_copy_left_right_samples") else { fatalError() }
+      guard let function = Renderer.library.makeFunction(name: "straighten_mean_left_right") else { fatalError() }
       return try Renderer.device.makeComputePipelineState(function: function)
     } catch {
       fatalError()
     }
   }
+
   
   static func makeStraightenDeltaSquaredPSO() -> MTLComputePipelineState {
     do {
@@ -125,32 +122,17 @@ public class Straighten {
     }
     straightenedImage?.label = "Straightened image"
     
-   
     
     textureDescriptor.usage = [.shaderWrite, .shaderRead]
     let params = makeStraightenParams(textureWidth: texture.width)
-    textureDescriptor.width = Int(params.width)
+    textureDescriptor.width = 2
     
-    leftSampleTexture  = Renderer.device.makeTexture(descriptor: textureDescriptor)
-    rightSampleTexture = Renderer.device.makeTexture(descriptor: textureDescriptor)
+    rowMeanTexture = Renderer.device.makeTexture(descriptor: textureDescriptor)
     
-    if leftSampleTexture == nil || rightSampleTexture == nil {
+    if rowMeanTexture == nil {
       fatalError()
     }
-    leftSampleTexture?.label = "Left sample texture"
-    rightSampleTexture?.label = "Right sample texture"
-    
-    
-    // 1 x image height
-    textureDescriptor.width = 1;
-    leftAveragedTexture  = Renderer.device.makeTexture(descriptor: textureDescriptor)
-    rightAveragedTexture = Renderer.device.makeTexture(descriptor: textureDescriptor)
-
-    if leftAveragedTexture == nil || rightAveragedTexture == nil {
-      fatalError()
-    }
-    leftAveragedTexture?.label = "Left averaged sample texture"
-    rightAveragedTexture?.label = "Right averaged sample texture"
+    rowMeanTexture?.label = "Left/right row mean texture"
     
     // range(i) x image height
     textureDescriptor.pixelFormat = .r16Float // HALF
@@ -175,13 +157,13 @@ public class Straighten {
   }
   
   
-  func straightenCopyLR(commandBuffer: MTLCommandBuffer, image: MTLTexture, params: StraightenParams) {
-    commandBuffer.pushDebugGroup("Copying L/R")
+  func straightenCalculateLeftRightMean(commandBuffer: MTLCommandBuffer, image: MTLTexture, params: StraightenParams) {
+    commandBuffer.pushDebugGroup("Straighten; find L/R mean")
     guard let computeEncoder = commandBuffer.makeComputeCommandEncoder()
         else { return }
         
     var params = params
-    computeEncoder.setComputePipelineState(straightenCopyPSO)
+    computeEncoder.setComputePipelineState(straightenMeanPSO)
     computeEncoder.setBytes(
       &params,
       length: MemoryLayout<StraightenParams>.stride,
@@ -189,15 +171,12 @@ public class Straighten {
     )
     
     computeEncoder.setTexture(image, index: 0)
-    computeEncoder.setTexture(leftSampleTexture, index: 1)
-    computeEncoder.setTexture(rightSampleTexture, index: 2)
+    computeEncoder.setTexture(rowMeanTexture, index: 1)
     
-    // TODO do averaging in here? Use memory barriers for each threadgroup, atomically find average, write to thread id 0 position
-    // In second pass sum averages from threadgroups divide
     let threadsPerThreadgroup = MTLSize(
       width: min(
-        Int(params.width),
-        straightenCopyPSO.maxTotalThreadsPerThreadgroup
+        Int(image.height),
+        straightenMeanPSO.maxTotalThreadsPerThreadgroup
       ),
       height: 1,
       depth: 1
@@ -212,15 +191,15 @@ public class Straighten {
       threadsPerThreadgroup: threadsPerThreadgroup
     )
     
-    computeEncoder.endEncoding()
     commandBuffer.popDebugGroup()
+    computeEncoder.endEncoding()
   }
   
   func straightenCalculateDeltaSquared(commandBuffer: MTLCommandBuffer, image: MTLTexture, params: StraightenParams) {
+    commandBuffer.pushDebugGroup("Find L/R per-row deltas")
     guard let computeEncoder = commandBuffer.makeComputeCommandEncoder()
         else { return }
     
-    commandBuffer.pushDebugGroup("Delta")
     computeEncoder.setComputePipelineState(straightenDeltaSquaredPSO)
     var params = params;
     computeEncoder.setBytes(
@@ -230,13 +209,12 @@ public class Straighten {
     )
     
     computeEncoder.setTexture(deltaTexture, index: 0)
-    computeEncoder.setTexture(leftAveragedTexture, index: 1)
-    computeEncoder.setTexture(rightAveragedTexture, index: 2)
+    computeEncoder.setTexture(rowMeanTexture, index: 1)
 
     let threadsPerThreadgroup = MTLSize(
       width: min(
         Int(image.height),
-        straightenCopyPSO.maxTotalThreadsPerThreadgroup
+        straightenDeltaSquaredPSO.maxTotalThreadsPerThreadgroup
       ),
       height: 1,
       depth: 1
@@ -260,27 +238,13 @@ public class Straighten {
       fatalError()
     }
     commandBuffer.label = "Determine straightening angle"
-    if leftSampleTexture == nil || leftSampleTexture!.height != image.height {
+    if rowMeanTexture == nil || rowMeanTexture!.height != image.height {
       try makeTextureBuffers(texture: image)
     }
     
     // Copy segments from the left and right sides of the image into their own textures
     let params = makeStraightenParams(textureWidth: image.width)
-    straightenCopyLR(commandBuffer: commandBuffer, image: image, params: params)
-    
-    commandBuffer.pushDebugGroup("MPS row reduce")
-    // Find the average pixel value for each row (horizontally)
-    rowSquashEncoder.encode(
-      commandBuffer: commandBuffer,
-      sourceTexture: leftSampleTexture!,
-      destinationTexture: leftAveragedTexture!
-    )
-    rowSquashEncoder.encode(
-      commandBuffer: commandBuffer,
-      sourceTexture: rightSampleTexture!,
-      destinationTexture: rightAveragedTexture!
-    )
-    commandBuffer.popDebugGroup()
+    straightenCalculateLeftRightMean(commandBuffer: commandBuffer, image: image, params: params)
     
     // Calculate the difference squared between the left and right halves of the image
     // Do this multiple times by sliding/offsetting the right image up/down by a few pixels

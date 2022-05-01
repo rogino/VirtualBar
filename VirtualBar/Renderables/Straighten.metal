@@ -11,34 +11,29 @@ using namespace metal;
 #import "./PlonkTextureShared.metal"
 
 
-kernel void straighten_copy_left_right_samples(
+kernel void straighten_mean_left_right(
   constant StraightenParams& config [[buffer(0)]],
-  texture2d<half, access::read>  image [[texture(0)]],
-  texture2d<half, access::write> left  [[texture(1)]],
-  texture2d<half, access::write> right [[texture(2)]],
+  texture2d<half,  access::read > image [[texture(0)]],
+  texture2d<float, access::write>  mean [[texture(1)]],
                                     
   ushort2 pid [[thread_position_in_grid]]
 ) {
   ushort y = pid.x;
   bool isLeft = pid.y == 0;
   
-  texture2d<half, access::write> output = isLeft ? left: right;
+  ushort startX = isLeft ? config.leftX: config.rightX;
+  
+  float4 sum = float(0);
   for(ushort x = 0; x < config.width; x++) {
-    output.write(
-      image.read(ushort2(
-        (isLeft ? config.leftX: config.rightX) + x,
-        y
-      )),
-      ushort2(x, y)
-    );
+    sum += float4(image.read(ushort2(startX + x, y)));
   }
+  mean.write(sum / config.width, ushort2(pid.y, pid.x));
 }
 
 kernel void straighten_left_right_delta_squared(
-  constant StraightenParams& config     [[buffer(0)]],
+  constant StraightenParams& config        [[buffer(0)]],
   texture2d<float, access::write> delta    [[texture(0)]],
-  texture2d<half,  access::read>  leftAvg  [[texture(1)]],
-  texture2d<half,  access::read>  rightAvg [[texture(2)]],
+  texture2d<float,  access::read>  rowMean [[texture(1)]],
                                     
   ushort2 pid [[thread_position_in_grid]]
 ) {
@@ -52,12 +47,12 @@ kernel void straighten_left_right_delta_squared(
     return;
   }
   
-  half4 left  =  leftAvg.read(ushort2(0, yLeft ));
-  half4 right = rightAvg.read(ushort2(0, yRight));
+  float4 left  = rowMean.read(ushort2(0, yLeft ));
+  float4 right = rowMean.read(ushort2(1, yRight));
   
   // Find difference as a *proportion* of the larger value, not absolute
   // (0.1, 0.2) is bigger error than (0.8, 0.9)
-  float3 diff = float3(left.xyz) - float3(right.xyz);
+  float3 diff = left.xyz - right.xyz;
   float diffSquared = dot(diff, diff);
   
   float3 larger = length(left) > length(right) ? float3(left.xyz): float3(right.xyz);

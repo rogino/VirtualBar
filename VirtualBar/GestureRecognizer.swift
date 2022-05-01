@@ -146,13 +146,37 @@ public class GestureRecognizer {
     // Need to increase size of active area due to inaccuracies in detector
     let minY = 1 - (1 - activeAreaBottom) * activeAreaFudgeScale
     
-    // TODO multiple hand detection
-    for hand in results.count > 0 ? [results.first!]: [] {
-      let fingerTips = tryGetFingerTips(
-        hand: hand,
-        minConfidence: minConfidence,
-        minY: Double(minY)
-      )
+    let hands = results.map({ tryGetFingerTips(
+      hand: $0,
+      minConfidence: minConfidence,
+      minY: Double(minY)
+    ) }).sorted(by: {
+      // Currently only two and three finger gestures, so index and middle present
+      // in either case
+      let middleFinger1 = $0[.middleTip]
+      let middleFinger2 = $1[.middleTip]
+      switch((middleFinger1, middleFinger2)) {
+      case (nil, nil):
+        return true // unsortable
+      case (nil, _):
+        return false
+      case (_, nil):
+        return true
+      case (_, _):
+        if gestureState.gestureType != .none {
+          // return closest finger
+          return abs(middleMovingAverage.output() - Float(middleFinger1!.x)) <
+                 abs(middleMovingAverage.output() - Float(middleFinger2!.x))
+        } else {
+          // Hand with greater confidence comes first if no gesture
+          return middleFinger1!.confidence > middleFinger2!.confidence
+        }
+      }
+    })
+    
+    guard let fingerTips = hands.first else {
+      return
+    }
       
       let tipXPositions = fingerTips.mapValues({ Float($0.x) })
       
@@ -210,11 +234,5 @@ public class GestureRecognizer {
       case .end:
         break
       }
-    }
-  }
-  
-  func isRightHand(hand: VNHumanHandPoseObservation) -> Bool? {
-    //    if
-    return nil
   }
 }

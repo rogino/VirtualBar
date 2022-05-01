@@ -92,6 +92,7 @@ public class Straighten {
       vertex: "vertex_plonk_texture",
       fragment: "fragment_straighten"
     )
+//    pipelineDescriptor.colorAttachments[0].pixelFormat = .rgba8Unorm
     do {
       let pipelineState = try Renderer.device.makeRenderPipelineState(descriptor: pipelineDescriptor)
       return pipelineState
@@ -312,7 +313,7 @@ public class Straighten {
     let averagedAngle = movingAverage.output()
     Self.detectedAngle = String(format: "%.1f", averagedAngle * 180 / Float.pi)
     
-    return createRotationMatrix(angle: averagedAngle)
+    return createRotationMatrix(angle: averagedAngle, aspectRatio: Float(image.width) / Float(image.height))
   }
   
   func calculateCorrectionAngle(avgDelta: [Float], params: StraightenParams) -> Float {
@@ -327,7 +328,7 @@ public class Straighten {
     return sortedAngles.first!.angle
   }
   
-  func createRotationMatrix(angle: Float) -> simd_float3x3 {
+  func createRotationMatrix(angle: Float, aspectRatio: Float = Float(16.0/9.0)) -> simd_float3x3 {
     let rotation = float3x3(rows: [
       [cos(angle), -sin(angle), 0],
       [sin(angle),  cos(angle), 0],
@@ -340,7 +341,10 @@ public class Straighten {
       [0, 0, 1  ]
     ])
     
-    return translation * rotation * translation.inverse
+    var aspect = float3x3(1)
+    aspect.columns.0.x = aspectRatio
+    
+    return translation * aspect.inverse * rotation * aspect * translation.inverse
   }
 
   // Copies image from MTLTexture to a CPU buffer with the correct amount of memory allocated
@@ -371,7 +375,7 @@ public class Straighten {
   
   
   
-  public func straighten(image: MTLTexture) -> MTLTexture {
+  public func straighten(image: MTLTexture, angle: Float? = nil) -> MTLTexture {
     if !Self.enableStraightening {
       return image
     }
@@ -382,10 +386,15 @@ public class Straighten {
     commandBuffer.label = "Straighten image"
     
     var transform = float3x3(1) // identity
-    do {
-      transform = try determineStraightenTransform(image: image)
-    } catch {
-      fatalError()
+    
+    if angle != nil {
+      transform = createRotationMatrix(angle: angle!, aspectRatio: Float(image.width) / Float(image.height))
+    } else {
+      do {
+        transform = try determineStraightenTransform(image: image)
+      } catch {
+        fatalError()
+      }
     }
     commandBuffer.pushDebugGroup("Straighten image transform")
     guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(

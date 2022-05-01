@@ -85,7 +85,7 @@ private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
   
   
   var description: String {
-    return String(format: "[%.2f to %.2f], brightness %.3f, weight %.2f, score %.2f", x1, x2, centerBrightness, scaledWeightedAverage, score)
+    return String(format: "[%.2f to %.2f], brightness %.3f, weight %.4f, score %.3f", x1, x2, centerBrightness, scaledWeightedAverage, score)
   }
   
   

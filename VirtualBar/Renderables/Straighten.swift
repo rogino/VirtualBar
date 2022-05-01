@@ -92,7 +92,7 @@ public class Straighten {
       vertex: "vertex_plonk_texture",
       fragment: "fragment_straighten"
     )
-//    pipelineDescriptor.colorAttachments[0].pixelFormat = .rgba8Unorm
+    pipelineDescriptor.colorAttachments[0].pixelFormat = .rgba8Unorm
     do {
       let pipelineState = try Renderer.device.makeRenderPipelineState(descriptor: pipelineDescriptor)
       return pipelineState

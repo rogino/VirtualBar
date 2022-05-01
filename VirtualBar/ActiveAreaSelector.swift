@@ -42,14 +42,33 @@ private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
   var centerBrightnessAlpha: Float = 0.05
   var weightedAveragedDerivativeAlpha: Float = 0.05
   
+  // Brightness values are much much larger so need to scale weighted averaged derivative
+  // by a lot. brightness + (max - weighted derivative)/max
+  var scoringWeightedAveragedDerivativeMaxValue: Float = 4e-5
+
+  
   let id = UUID()
   
   // Rank multiplier: when area shows up, don't want it to just immediately go to top
-  init(initial: CandidateArea, rankMultiplier: Float = 1.0) {
+  init(
+    initial: CandidateArea,
+    rankMultiplier: Float = 1.0,
+    scoringWeightedAveragedDerivativeMaxValue: Float? = nil
+  ) {
     x1MovingAverage = ExponentialWeightedMovingAverage(alpha: xAlpha, initialValue: Float(initial.x1))
     x2MovingAverage = ExponentialWeightedMovingAverage(alpha: xAlpha, initialValue: Float(initial.x2))
-    centerBrightnessAverage           = ExponentialWeightedMovingAverage(alpha: centerBrightnessAlpha, initialValue: Float(initial.centerBrightness))
-    weightedAveragedDerivativeAverage = ExponentialWeightedMovingAverage(alpha: weightedAveragedDerivativeAlpha, initialValue: Float(initial.weightedAveragedDerivative))
+    centerBrightnessAverage = ExponentialWeightedMovingAverage(
+      alpha: centerBrightnessAlpha,
+      initialValue: Float(initial.centerBrightness)
+    )
+    weightedAveragedDerivativeAverage = ExponentialWeightedMovingAverage(
+      alpha: weightedAveragedDerivativeAlpha,
+      initialValue: Float(initial.weightedAveragedDerivative)
+    )
+    
+    if let weighting = scoringWeightedAveragedDerivativeMaxValue {
+      self.scoringWeightedAveragedDerivativeMaxValue = weighting
+    }
   }
   
   func update(update: CandidateArea) {
@@ -66,18 +85,31 @@ private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
   
   
   var description: String {
-    return String(format: "[%.2f to %.2f], brightness %.3f, weight %.7f", x1, x2, centerBrightness, weightedAveragedDerivative)
+    return String(format: "[%.2f to %.2f], brightness %.3f, weight %.2f, score %.2f", x1, x2, centerBrightness, scaledWeightedAverage, score)
   }
   
+  
+  var scaledWeightedAverage: Float {
+    func clamp(val: Float, min: Float, max: Float) -> Float {
+      return val < min ? min: (max < val ? max: val)
+    }
+    return clamp(
+      val: scoringWeightedAveragedDerivativeMaxValue - weightedAveragedDerivative,
+      min: 0,
+      max: scoringWeightedAveragedDerivativeMaxValue
+    ) / scoringWeightedAveragedDerivativeMaxValue
+  }
+  
+  // Score in range [0, 2]
+  var score: Float {
+    return centerBrightness + scaledWeightedAverage
+  }
 }
 
 public class ActiveAreaSelector {
   let LOG = true
-  static let ONLY_USE_BRIGHTNESS_SORT = false
-  static let ONLY_USE_DERIVATIVE_SORT = false
   
   fileprivate var candidates: [CandidateAreaHistory] = []
-  
 
   // For each sample in which the area is not found, the brightness tends to this value
   let brightnessTendsTo: Float = 0
@@ -91,37 +123,16 @@ public class ActiveAreaSelector {
   let maxNumCandidates: Int = 4
   
   let maxWeightedAveragedDerivative: Float = 1e-4
-  let minBrightness: Float = 0.1
+  let minBrightness: Float = 0.05
+  
+  // Brightness values are much much larger so need to scale weighted averaged derivative
+  // by a lot. Also inverting value so that larger values are better
+  let sortingWeightedAveragedDerivativeMaxValue: Float = 4e-5
   
   var lockedCandidateId: UUID? = nil
   
   fileprivate static func sort(_ candidates: [CandidateAreaHistory]) -> [CandidateAreaHistory] {
-    // TODO somehow favour candidate areas with lower y value?
-    // Brighter brightness -> larger is good
-    let brightnessSort  = candidates.sorted(by: { $0.centerBrightness > $1.centerBrightness })
-    if ONLY_USE_BRIGHTNESS_SORT {
-      print("WARNING: ONLY USING BRIGHTNESS FOR RANKING")
-      return brightnessSort
-    }
-    
-    // Lower averaged weighted derivative -> smaller is good
-    let weightSort = candidates.sorted(by: { $0.weightedAveragedDerivative < $1.weightedAveragedDerivative })
-    
-    if ONLY_USE_DERIVATIVE_SORT {
-      print("WARNING: ONLY USING DERIVATIVE FOR RANKING")
-      return weightSort
-    }
-    
-    // Sum the brightness and weight indexes, find the lowest
-    let indexSumSort: [(weightIndex: Int, brightnessIndex: Int, sum: Int)] = brightnessSort.enumerated().map { (i, val) in
-      let weightIndex = weightSort.firstIndex(where: { $0.x1 == val.x1 })!
-      return (weightIndex: weightIndex, brightnessIndex: i, sum: weightIndex + i)
-    }.sorted(by: { $0.sum == $1.sum ? $0.brightnessIndex < $1.brightnessIndex : $0.sum < $1.sum })
-    // If sum of indices are the same, prefer brightness over weight
-    
-    let sortedMatches: [CandidateAreaHistory] = indexSumSort.enumerated().map { brightnessSort[$1.brightnessIndex] }
-    
-    return sortedMatches
+    return candidates.sorted(by: { $0.score > $1.score })
   }
   
   fileprivate static func moveLockedCandidateToTop(_ candidates: inout [CandidateAreaHistory], lockedCandidateId: UUID?) {
@@ -149,7 +160,10 @@ public class ActiveAreaSelector {
     }
     
     for current in candidates {
-      let index = sortedCandidates.firstIndex(where: { current.center - maxCenterPositionDeviation < $0.center && $0.center < current.center + maxCenterPositionDeviation })
+      let index = sortedCandidates.firstIndex(where: {
+        current.center - maxCenterPositionDeviation < $0.center &&
+        $0.center < current.center + maxCenterPositionDeviation
+      })
       if (index == nil) {
         current.notFound(brightnessTendsTo: brightnessTendsTo, weightedAverageTendsTo: weightedAverageTendsTo)
         continue
@@ -167,7 +181,11 @@ public class ActiveAreaSelector {
     }
     
     for newCandidate in sortedCandidates {
-      candidates.append(CandidateAreaHistory(initial: newCandidate, rankMultiplier: initialRankMultiplier))
+      candidates.append(CandidateAreaHistory(
+        initial: newCandidate,
+        rankMultiplier: initialRankMultiplier,
+        scoringWeightedAveragedDerivativeMaxValue: sortingWeightedAveragedDerivativeMaxValue
+      ))
     }
    
     // Sorted by rank, best first

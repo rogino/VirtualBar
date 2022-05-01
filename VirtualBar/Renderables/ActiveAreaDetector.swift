@@ -6,7 +6,16 @@
 //
 
 public class ActiveAreaDetector {
-  private static func triangleWeightedAverage(arr: [Float], min: Int, size: Int, minWeight: Float = 0) -> Float {
+  enum WeightedAverageType {
+    case triangle, rect
+  }
+  private static func weightedAverage(
+    arr: [Float],
+    min: Int, size: Int, // start at index for n elements
+    type: WeightedAverageType,
+    minWeight: Float = 0,
+    cutOffProportion: Float = 0.2 // Ignore first and last x/2 % of the area
+  ) -> Float {
     let radius = Float(size - 1) / 2
     let center: Float = Float(min) + radius
     
@@ -16,20 +25,20 @@ public class ActiveAreaDetector {
     }
     
     func halfDistributionCutoffTriangle(t: Float) -> Float {
-      let cutOff: Float = 0.2 // Ignore first and last 10% of the image
-      return halfDistributionTriangle(t: max(Float(0), t - cutOff))
+      return halfDistributionTriangle(t: max(Float(0), t - cutOffProportion))
     }
     
     func halfDistributionCutoffRect(t: Float) -> Float {
-      let cutOff: Float = 0.2 // Ignore first and last 10% of the image
-      return t < cutOff ? 0: 1
+      return t < cutOffProportion ? 0: 1
     }
     
     return (min..<min + size).makeIterator().reduce(0) { current, i in
       let distanceFromCenter = abs(Float(i) - center) / radius
       let t = 1 - distanceFromCenter
-  //      let weight = halfDistributionCutoffTriangle(t: t)
-      let weight = halfDistributionCutoffRect(t: t)
+      let weight = type == .triangle ?
+        halfDistributionCutoffTriangle(t: t):
+        halfDistributionCutoffRect(t: t)
+      
       return current + arr[i] * arr[i] * weight
     } / Float(size)
   }
@@ -58,7 +67,12 @@ public class ActiveAreaDetector {
             // so this should prevent a key row from being detected as a false positive
             centerBrightness: squashOutput[current.x + current.size / 2],
             // Idea: use weighted derivative quantify amount of variance
-            weightedAveragedDerivative: Self.triangleWeightedAverage(arr: sobelOutput, min: current.x, size: current.size),
+            weightedAveragedDerivative: Self.weightedAverage(
+              arr: sobelOutput,
+              min: current.x,
+              size: current.size,
+              type: .rect
+            ),
             ranking: -1
           ))
         }

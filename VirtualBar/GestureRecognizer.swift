@@ -178,61 +178,61 @@ public class GestureRecognizer {
       return
     }
       
-      let tipXPositions = fingerTips.mapValues({ Float($0.x) })
-      
-      func averageX(_ points: [VNHumanHandPoseObservation.JointName]) -> Float {
-        return tipXPositions.reduce(Float(0), {
-          $0 + (points.contains($1.key) ? $1.value: 0)
-        }) / Float(points.count)
-      }
-      
-      var detectedGesture: GestureType = .none
-      var position: Float? = nil
-      
-      if fingerTips.keys.contains(.indexTip) && fingerTips.keys.contains(.middleTip) {
-        detectedGesture = .two
-        position = averageX([.indexTip, .middleTip])
-        if fingerTips.keys.contains(.ringTip) {
-          let indexMiddleAvgY = (fingerTips[.indexTip]!.y + fingerTips[.middleTip]!.y) / 2
-          let ringY = fingerTips[.ringTip]!.y
-          // Tip detection can be quite inaccurate but is consistent within a frame, so
-          // ring finger often detected as being inside active area. Bending the ring finger
-          // more leads to hand not being detected, so this needed to avoid detecting a two
-          // finger gesture as a three finger one
-          if Float(indexMiddleAvgY - ringY) <= maxRingDeltaY {
-            detectedGesture = .three
-            position = averageX([.indexTip, .middleTip, .ringTip])
-          }
+    let tipXPositions = fingerTips.mapValues({ Float($0.x) })
+    
+    func averageX(_ points: [VNHumanHandPoseObservation.JointName]) -> Float {
+      return tipXPositions.reduce(Float(0), {
+        $0 + (points.contains($1.key) ? $1.value: 0)
+      }) / Float(points.count)
+    }
+    
+    var detectedGesture: GestureType = .none
+    var position: Float? = nil
+    
+    if fingerTips.keys.contains(.indexTip) && fingerTips.keys.contains(.middleTip) {
+      detectedGesture = .two
+      position = averageX([.indexTip, .middleTip])
+      if fingerTips.keys.contains(.ringTip) {
+        let indexMiddleAvgY = (fingerTips[.indexTip]!.y + fingerTips[.middleTip]!.y) / 2
+        let ringY = fingerTips[.ringTip]!.y
+        // Tip detection can be quite inaccurate but is consistent within a frame, so
+        // ring finger often detected as being inside active area. Bending the ring finger
+        // more leads to hand not being detected, so this needed to avoid detecting a two
+        // finger gesture as a three finger one
+        if Float(indexMiddleAvgY - ringY) <= maxRingDeltaY {
+          detectedGesture = .three
+          position = averageX([.indexTip, .middleTip, .ringTip])
+        }
 //          print(Float(indexMiddleAvgY - ringY), detectedGesture)
+      }
+    }
+    
+    switch gestureState.tick(detected: detectedGesture, startPosition: position) {
+    case .begin:
+      if [.two, .three].contains(gestureState.gestureType) {
+        indexMovingAverage.set(tipXPositions[.indexTip]!)
+        middleMovingAverage.set(tipXPositions[.middleTip]!)
+        if gestureState.gestureType == .three {
+          ringMovingAverage.set(tipXPositions[.ringTip]!)
         }
       }
-      
-      switch gestureState.tick(detected: detectedGesture, startPosition: position) {
-      case .begin:
-        if [.two, .three].contains(gestureState.gestureType) {
-          indexMovingAverage.set(tipXPositions[.indexTip]!)
-          middleMovingAverage.set(tipXPositions[.middleTip]!)
-          if gestureState.gestureType == .three {
-            ringMovingAverage.set(tipXPositions[.ringTip]!)
-          }
-        }
-        break
-      case .noChange:
-        if gestureState.gestureType == .none {
-          break
-        }
-        if let x = tipXPositions[.indexTip] {
-          indexMovingAverage.input(x)
-        }
-        if let x = tipXPositions[.middleTip] {
-          middleMovingAverage.input(x)
-        }
-        if let x = tipXPositions[.ringTip] {
-          ringMovingAverage.input(x)
-        }
-        break
-      case .end:
+      break
+    case .noChange:
+      if gestureState.gestureType == .none {
         break
       }
+      if let x = tipXPositions[.indexTip] {
+        indexMovingAverage.input(x)
+      }
+      if let x = tipXPositions[.middleTip] {
+        middleMovingAverage.input(x)
+      }
+      if let x = tipXPositions[.ringTip] {
+        ringMovingAverage.input(x)
+      }
+      break
+    case .end:
+      break
+    }
   }
 }

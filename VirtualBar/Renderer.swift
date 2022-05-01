@@ -50,6 +50,7 @@ class Renderer: NSObject {
     
     self.fingerDetector = FingerDetector(activeAreaSelector: imageMean.activeAreaSelector)
     
+    originalTexture = imageMean.texture!
     super.init()
     metalView.delegate = self
     
@@ -61,6 +62,12 @@ class Renderer: NSObject {
     renderables.append(imageMean)
 //    renderables.append(PlonkTexture())
     renderables.append(fingerPointsRenderer)
+    
+    // Create textures
+    do {
+      try straightener.makeTextureBuffers(texture: originalTexture)
+    } catch {}
+    
   }
 
   // Library: set of metal functions
@@ -78,6 +85,8 @@ class Renderer: NSObject {
     descriptor.isDepthWriteEnabled = true
     return Renderer.device.makeDepthStencilState(descriptor: descriptor)
   }
+  
+  let originalTexture: MTLTexture
 }
 
 extension Renderer: MTKViewDelegate {
@@ -86,6 +95,7 @@ extension Renderer: MTKViewDelegate {
   }
   
   func draw(in view: MTKView) {
+    imageMean.texture = straightener.straighten(image: originalTexture, angle: -Float.pi * 1.5/180)
     guard
       let descriptor = view.currentRenderPassDescriptor,
       let commandBuffer = Renderer.commandQueue.makeCommandBuffer(),

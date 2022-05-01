@@ -29,7 +29,7 @@ public class ActiveAreaDetector {
     }
     
     func halfDistributionCutoffRect(t: Float) -> Float {
-      return t < cutOffProportion ? 0: 1
+      return t >= cutOffProportion ? 1: 0
     }
     
     return (min..<min + size).makeIterator().reduce(0) { current, i in
@@ -71,7 +71,8 @@ public class ActiveAreaDetector {
               arr: sobelOutput,
               min: current.x,
               size: current.size,
-              type: .rect
+              type: .rect,
+              cutOffProportion: 0.2
             ),
             ranking: -1
           ))

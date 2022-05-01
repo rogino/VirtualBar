@@ -42,7 +42,7 @@ public class ImageMean: Renderable {
     let textureLoader = MTKTextureLoader(device: Renderer.device)
     do {
       _texture = try textureLoader.newTexture(
-        name: "test", // File in .xcassets texture set
+        name: "grid", // File in .xcassets texture set
         scaleFactor: 1.0,
         bundle: Bundle.main,
         options: nil

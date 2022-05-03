@@ -3,7 +3,7 @@ import MetalPerformanceShaders
 
 public class Straighten {
   // this section of the left half of texture used in averaging. right is symmetrical
-  var halfSampleTextureSize: (Float, Float) = (0.2, 0.4)
+  var halfSampleTextureSize: (Float, Float) = (0.0, 0.5)
   
   // Max angle to correct
   var maxCorrectionAngleDegrees: Float = 2
@@ -123,9 +123,10 @@ public class Straighten {
     straightenedImage?.label = "Straightened image"
     
     
+    textureDescriptor.pixelFormat = .r32Float
     textureDescriptor.usage = [.shaderWrite, .shaderRead]
     let params = makeStraightenParams(textureWidth: texture.width)
-    textureDescriptor.width = 2
+    textureDescriptor.width = 2 // left for left sample, right for right sample
     
     rowMeanTexture = Renderer.device.makeTexture(descriptor: textureDescriptor)
     
@@ -135,7 +136,6 @@ public class Straighten {
     rowMeanTexture?.label = "Left/right row mean texture"
     
     // range(i) x image height
-    textureDescriptor.pixelFormat = .r16Float // HALF
     textureDescriptor.width = Int(1 + params.offsetYMax - params.offsetYMin) // symmetrical around offset y=0
     deltaTexture = Renderer.device.makeTexture(descriptor: textureDescriptor)
     
@@ -145,7 +145,6 @@ public class Straighten {
     deltaTexture?.label = "Delta sample texture"
     
     // range(i) x 1
-    textureDescriptor.pixelFormat = .r32Float // FLOAT
     textureDescriptor.height = 1
     deltaAveragedTexture = Renderer.device.makeTexture(descriptor: textureDescriptor)
     if deltaAveragedTexture == nil {
@@ -316,7 +315,7 @@ public class Straighten {
     // https://developer.apple.com/documentation/metal/mtltexture/1515751-getbytes
     source.getBytes(
       destination,
-      bytesPerRow: source.bufferBytesPerRow,
+      bytesPerRow: MemoryLayout<T>.stride * source.width,
       from: MTLRegion(
         origin: MTLOrigin(x: 0, y: 0, z: 0),
         size: MTLSize(width: source.width, height: source.height, depth: 1)
@@ -338,7 +337,8 @@ public class Straighten {
   }
   
   
-  
+  var time: CFAbsoluteTime = 0
+  var count = 0
   public func straighten(image: MTLTexture, angle: Float? = nil) -> MTLTexture {
     if !Self.enableStraightening {
       return image

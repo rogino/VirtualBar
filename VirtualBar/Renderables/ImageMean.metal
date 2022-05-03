@@ -17,7 +17,7 @@ fragment float4 fragment_image_mean(
   constexpr sampler textureSampler;
   float4 original = originalTexture.sample(textureSampler, in.texturePosition);
   float4 squash = squashTexture.sample(textureSampler, float2(0, in.texturePosition[1]));
-  float4 sobel = sobelTexture.sample(textureSampler, float2(0, in.texturePosition[1]));
+  float4 sobel = float4(float3(sobelTexture.sample(textureSampler, float2(0, in.texturePosition[1])).r), 1);
   
                
   if (in.texturePosition[0] < 0.1) return sobel * 5;
@@ -69,8 +69,7 @@ float2 tangentialDistortion(
 
 
 kernel void line_of_symmetry(
-  texture2d<float> sobelTexture [[texture(0)]],
-  // https://stackoverflow.com/questions/47738441/passing-textures-with-uint8-component-type-to-metal-compute-shader
+  texture2d<float> sobelTexture [[texture(0)]]  // https://stackoverflow.com/questions/47738441/passing-textures-with-uint8-component-type-to-metal-compute-shader
   // Sobel texture is uint8_t but automatically converted to float
   device float *outputBuffer [[buffer(0)]],
   constant LineOfSymmetryArgs &args [[buffer(1)]],

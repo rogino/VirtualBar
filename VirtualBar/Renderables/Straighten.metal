@@ -13,7 +13,7 @@ using namespace metal;
 
 kernel void straighten_mean_left_right(
   constant StraightenParams& config [[buffer(0)]],
-  texture2d<half,  access::read > image [[texture(0)]],
+  texture2d<float, access::read > image [[texture(0)]],
   texture2d<float, access::write>  mean [[texture(1)]],
                                     
   ushort2 pid [[thread_position_in_grid]]
@@ -23,11 +23,13 @@ kernel void straighten_mean_left_right(
   
   ushort startX = isLeft ? config.leftX: config.rightX;
   
-  float4 sum = float(0);
+  float sum = 0;
   for(ushort x = 0; x < config.width; x++) {
-    sum += float4(image.read(ushort2(startX + x, y)));
+    float3 sample = image.read(ushort2(startX + x, y)).rgb;
+    sum += dot(sample, sample) / 3;
   }
-  mean.write(sum / config.width, ushort2(pid.y, pid.x));
+  sum /= config.width;
+  mean.write(sum, ushort2(pid.y, pid.x));
 }
 
 kernel void straighten_left_right_delta_squared(
@@ -47,18 +49,18 @@ kernel void straighten_left_right_delta_squared(
     return;
   }
   
-  float4 left  = rowMean.read(ushort2(0, yLeft ));
-  float4 right = rowMean.read(ushort2(1, yRight));
+  float left  = rowMean.read(ushort2(0, yLeft )).r;
+  float right = rowMean.read(ushort2(1, yRight)).r;
   
   // Find difference as a *proportion* of the larger value, not absolute
   // (0.1, 0.2) is bigger error than (0.8, 0.9)
-  float3 diff = left.xyz - right.xyz;
-  float diffSquared = dot(diff, diff);
+  float diff = left - right;
+  float numerator = diff * diff;
   
-  float3 larger = length(left) > length(right) ? float3(left.xyz): float3(right.xyz);
-  float denominator = dot(larger, larger);
+  float larger = left > right ? left: right;
+  float denominator = larger * larger;
   
-  delta.write(diffSquared/denominator, pid.yx); // y is image y axis, x is i
+  delta.write(numerator/denominator, pid.yx); // y is image y axis, x is i
 }
 
 

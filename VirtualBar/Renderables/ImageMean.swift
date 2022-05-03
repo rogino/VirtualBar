@@ -29,7 +29,8 @@ public class ImageMean: Renderable {
   
   var squashTextureBuffer: MTLTexture?
   var sobelTextureBuffer: MTLTexture?
-  var cpuImageColumnBuffer: UnsafeMutablePointer<SIMD4<UInt8>>?
+  var cpuImageColumnBufferFloat: UnsafeMutablePointer<Float>?
+  var cpuImageColumnBuffer4UInt8: UnsafeMutablePointer<SIMD4<UInt8>>?
   
   let pipelineState: MTLRenderPipelineState
   var threshold: Float = 0
@@ -62,16 +63,22 @@ public class ImageMean: Renderable {
     )
     descriptor.usage = [.shaderWrite, .shaderRead]
     
-    guard let squashTextureBuffer = Renderer.device.makeTexture(descriptor: descriptor),
-          let  sobelTextureBuffer = Renderer.device.makeTexture(descriptor: descriptor)
-    else { fatalError() }
+    guard let squashTextureBuffer = Renderer.device.makeTexture(descriptor: descriptor) else {
+      fatalError()
+    }
+    
+    descriptor.pixelFormat = .r32Float
+    guard let sobelTextureBuffer = Renderer.device.makeTexture(descriptor: descriptor) else {
+      fatalError()
+    }
     
     squashTextureBuffer.label = "Squash texture buffer"
     sobelTextureBuffer.label = "Sobel texture buffer"
     self.squashTextureBuffer = squashTextureBuffer
     self.sobelTextureBuffer = sobelTextureBuffer
     
-    cpuImageColumnBuffer = UnsafeMutablePointer<SIMD4<UInt8>>.allocate(capacity: texture.height)
+    cpuImageColumnBufferFloat  = UnsafeMutablePointer<Float>.allocate(capacity: texture.height)
+    cpuImageColumnBuffer4UInt8 = UnsafeMutablePointer<SIMD4<UInt8>>.allocate(capacity: texture.height)
   }
   
   func runMPS(texture: MTLTexture) {
@@ -105,38 +112,28 @@ public class ImageMean: Renderable {
     // Squash + Sobel + simple symmetry compute: ~1.3 ms
 //    print("GPU Full Pipeline Duration:", CFAbsoluteTimeGetCurrent() - startTime)
     
+    Straighten.copyTexture(source: squashTextureBuffer!, destination: cpuImageColumnBuffer4UInt8!)
     
-    Self.copyTexture(source: sobelTextureBuffer!, destination: cpuImageColumnBuffer!)
-
-    let sobelOutputFloat: [Float] = Self.copyPixelsToArray(
-      source: cpuImageColumnBuffer!,
+    let squashOutput: [Float] = (Straighten.copyPixelsToArray(
+      source: cpuImageColumnBuffer4UInt8!,
       length: texture.height
-    ).map {
-      var float: SIMD4<Float> = SIMD4<Float>($0)
-      float.w = 0
-      float /= 255
-      return dot(float, float)
-    }
+    ) as [SIMD4<UInt8>]).map({
+      let val = float3(Float($0.x), Float($0.y), Float($0.z))
+      return length(val)
+    })
     
-    Self.copyTexture(source: squashTextureBuffer!, destination: cpuImageColumnBuffer!)
     
-    let squashOutput4UInt8: [SIMD4<UInt8>] = Self.copyPixelsToArray(
-      source: cpuImageColumnBuffer!,
+    Straighten.copyTexture(source: sobelTextureBuffer!, destination: cpuImageColumnBufferFloat!)
+
+    let sobelOutput: [Float] = Straighten.copyPixelsToArray(
+      source: cpuImageColumnBufferFloat!,
       length: texture.height
     )
-    
-    // Normalize brightness to [0, 1]
-    let squashOutputFloat: [Float] = squashOutput4UInt8.map {
-      var float: SIMD4<Float> = SIMD4<Float>($0)
-      float.w = 0
-      float /= 255
-      return dot(float, float) / 3
-    }
 
     let sizeRange = self.activeAreaHeightRange(imageHeight: texture.height)
     let candidateAreas = ActiveAreaDetector.detectCandidateAreas(
-      sobelOutput: sobelOutputFloat,
-      squashOutput: squashOutputFloat,
+      sobelOutput: sobelOutput,
+      squashOutput: squashOutput,
       threshold: Self.threshold,
       sizeRange: sizeRange
     )
@@ -148,40 +145,13 @@ public class ImageMean: Renderable {
       Self.activeArea = []
     } else {
       Self.activeArea = activeAreaSelector.getAllAreasSorted().map {[
-        $0[0] / Float(sobelOutputFloat.count),
-        $0[1] / Float(sobelOutputFloat.count)
+        $0[0] / Float(sobelOutput.count),
+        $0[1] / Float(sobelOutput.count)
 //        ($0[1] + ($0[1] - $0[0]) * GestureRecognizer().activeAreaFudgeScale) / Float(sobelOutputFloat.count)
       ]}
     }
   }
   
-  // Copies single column image from MTLTexture to a CPU buffer with the correct amount of memory allocated
-  static func copyTexture(source: MTLTexture, destination: UnsafeMutablePointer<SIMD4<UInt8>>) {
-    // https://developer.apple.com/documentation/metal/mtltexture/1515751-getbytes
-    source.getBytes(
-      destination,
-      bytesPerRow: MemoryLayout<SIMD4<UInt8>>.stride,
-      from: MTLRegion(
-        origin: MTLOrigin(x: 0, y: 0, z: 0),
-        size: MTLSize(width: 1, height: source.height, depth: 1)
-      ),
-      mipmapLevel: 0
-    )
-  }
-  
-  static func copyPixelsToArray<T>(source: UnsafeMutablePointer<T>, length: Int) -> [T] {
-    var output: [T] = []
-    var pointer = source
-    
-    for _ in 0..<length {
-      output.append(pointer.pointee)
-      pointer = pointer.advanced(by: 1)
-    }
-    
-    return output
-  }
-  
- 
   
   static func makePipeline() -> MTLRenderPipelineState {
     let pipelineDescriptor = buildPartialPipelineDescriptor(

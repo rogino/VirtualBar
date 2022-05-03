@@ -3,7 +3,7 @@ import MetalPerformanceShaders
 
 public class Straighten {
   // this section of the left half of texture used in averaging. right is symmetrical
-  var halfSampleTextureSize: (Float, Float) = (0.0, 0.5)
+  var halfSampleTextureSize: (Float, Float) = (0.2, 0.4)
   
   // Max angle to correct
   var maxCorrectionAngleDegrees: Float = 2
@@ -175,18 +175,15 @@ public class Straighten {
     computeEncoder.setTexture(rowMeanTexture, index: 1)
     
     let threadsPerThreadgroup = MTLSize(
-      width: min(
-        Int(image.height),
-        straightenMeanPSO.maxTotalThreadsPerThreadgroup
-      ),
-      height: 1,
+      width: 1,
+      height: straightenMeanPSO.maxTotalThreadsPerThreadgroup,
       depth: 1
     )
     
     computeEncoder.dispatchThreads(
       MTLSize(
-        width: image.height,
-        height: 2, // one thread for left/right
+        width: 2,
+        height: image.height,
         depth: 1
       ),
       threadsPerThreadgroup: threadsPerThreadgroup

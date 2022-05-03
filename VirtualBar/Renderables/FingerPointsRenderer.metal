@@ -2,6 +2,44 @@
 using namespace metal;
 #import "./../Common.h"
 
+float3 rgb2hsv(float3 in) {
+  // https://stackoverflow.com/a/6930407
+  float min, max, delta;
+  
+  min = in.r < in.g ? in.r : in.g;
+  min = min  < in.b ? min  : in.b;
+  
+  max = in.r > in.g ? in.r : in.g;
+  max = max  > in.b ? max  : in.b;
+  
+  float h = 0;
+  float s = 0;
+  float v = 0;
+  
+  v = max;
+  delta = max - min;
+  if (delta < 0.00001)
+  {
+    return float3(0, 0, v);
+  }
+  if(max > 0.0) {
+    s = delta / max;
+  } else {
+    return float3(NAN, 0, v);
+  }
+  if (in.r >= max) {
+    h = ( in.g - in.b ) / delta;        // between yellow & magenta
+  } else if (in.g >= max) {
+    h = 2.0 + ( in.b - in.r ) / delta;  // between cyan & yellow
+  } else {
+    h = 4.0 + ( in.r - in.g ) / delta;  // between magenta & cyan
+  }
+  
+  h /= 6;
+  return float3(h, s, v);
+}
+
+
 float3 hsv2rgb(float3 in) {
   // https://stackoverflow.com/a/6930407
   float  p, q, t, ff;

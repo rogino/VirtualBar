@@ -18,18 +18,15 @@ kernel void straighten_mean_left_right(
                                     
   ushort2 pid [[thread_position_in_grid]]
 ) {
-  ushort y = pid.x;
-  bool isLeft = pid.y == 0;
-  
-  ushort startX = isLeft ? config.leftX: config.rightX;
+  ushort startX = pid.x == 0 ? config.leftX: config.rightX;
   
   float sum = 0;
   for(ushort x = 0; x < config.width; x++) {
-    float3 sample = image.read(ushort2(startX + x, y)).rgb;
-    sum += dot(sample, sample) / 3;
+    float3 sample = image.read(ushort2(startX + x, pid.y)).rgb;
+    sum += length(sample);
   }
   sum /= config.width;
-  mean.write(sum, ushort2(pid.y, pid.x));
+  mean.write(sum, pid);
 }
 
 kernel void straighten_left_right_delta_squared(

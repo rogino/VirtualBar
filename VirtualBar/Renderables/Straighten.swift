@@ -14,6 +14,8 @@ public class Straighten {
   static var enableStraightening: Bool = true
   static var detectedAngle: String = ""
   
+  static var radialDistortionLambda: Float = 0.0
+  
   func makeStraightenParams(
     textureWidth: Int
   ) -> StraightenParams {
@@ -237,9 +239,6 @@ public class Straighten {
       fatalError()
     }
     commandBuffer.label = "Determine straightening angle"
-    if rowMeanTexture == nil || rowMeanTexture!.height != image.height {
-      try makeTextureBuffers(texture: image)
-    }
     
     // Copy segments from the left and right sides of the image into their own textures
     let params = makeStraightenParams(textureWidth: image.width)
@@ -349,6 +348,9 @@ public class Straighten {
     }
     commandBuffer.label = "Straighten image"
     
+    if rowMeanTexture == nil || rowMeanTexture!.height != image.height {
+      try! makeTextureBuffers(texture: image)
+    }
     var transform = float3x3(1) // identity
     
     if angle != nil {
@@ -361,6 +363,7 @@ public class Straighten {
       }
     }
     commandBuffer.pushDebugGroup("Straighten image transform")
+
     guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(
       descriptor: Self.makeStraightenRenderPassDescriptor(outputTexture: straightenedImage!)
     ) else { fatalError() }
@@ -370,9 +373,16 @@ public class Straighten {
     renderEncoder.setTriangleFillMode(.fill)
     
     renderEncoder.setFragmentTexture(image, index: 0)
+    
+    var params = StraightenFragmentParams(
+      straightenTransform: transform,
+      aspectRatio: image.aspectRatio,
+      radialDistortionLambda: Self.radialDistortionLambda
+    )
+    
     renderEncoder.setFragmentBytes(
-      &transform,
-      length: MemoryLayout<simd_float3x3>.stride,
+      &params,
+      length: MemoryLayout<StraightenFragmentParams>.stride,
       index: 0
     )
     renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)

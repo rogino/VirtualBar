@@ -4,6 +4,11 @@ import MetalKit
 typealias float3 = SIMD3<Float>
 typealias float4 = SIMD4<Float>
 
+extension MTLTexture {
+  var aspectRatio: Float {
+    return Float(width)/Float(height)
+  }
+}
 
 /*
  * Pipeline descriptor: object containing configuration for each mesh being rendered

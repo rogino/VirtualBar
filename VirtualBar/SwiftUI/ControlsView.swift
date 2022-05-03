@@ -13,6 +13,8 @@ struct ControlsView: View {
   @State var threshold: Float = ImageMean.threshold
   @State var enableStraightening: Bool = Straighten.enableStraightening
   
+  @State var radialDistortionLambda: Float = Straighten.radialDistortionLambda
+  
   let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
   @State var straighteningAngle = ""
 
@@ -34,6 +36,19 @@ struct ControlsView: View {
               .onReceive(timer) { _ in
                 straighteningAngle = Straighten.detectedAngle
               }
+          }
+        }
+        HStack {
+          Text("Radial Distortion")
+          Spacer()
+          Slider(value: $radialDistortionLambda, in: -0.1...0.1) {
+            Text(String(format: "%.4f", radialDistortionLambda))
+              .font(.system(.body, design: .monospaced))
+          }
+          .onChange(of: radialDistortionLambda) { _ in
+            DispatchQueue.main.async {
+              Straighten.radialDistortionLambda = radialDistortionLambda
+            }
           }
         }
         HStack {

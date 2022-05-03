@@ -63,12 +63,42 @@ kernel void straighten_left_right_delta_squared(
   delta.write(numerator/denominator, pid.yx); // y is image y axis, x is i
 }
 
+float2 distortion_correction(
+  float2 coord,
+  float aspectRatio,
+  float lambda
+) {
+  // https://ieeexplore.ieee.org/abstract/document/6419070
+  // d = distorted, u = corrected
+  float2 xy_d = coord;
+  xy_d.x *= aspectRatio;
+  
+  float2 xy_c = float2(0.5, 0.5);
+  xy_c.x *= aspectRatio;
+  
+  float2 centered = xy_d - xy_c;
+  
+//  float r_d = length(centered);
+//  float r_u = r_d/(1 + lambda * r_d * r_d);
+//
+//  float beta = (1 - sqrt(1 - 4 * lambda * r_u * r_u))/(2 * lambda * r_u * r_u);
+//  float2 xy_d = beta *  centered + xy_c;
+  
+//  float2 xy_u = centered/(1 + lambda * r_d * r_d) + xy_c;
+  
+  // Only equation that really matters, it seems
+  float2 xy_u = centered/(1 + lambda * dot(centered, centered)) + xy_c;
+  
+  xy_u.x /= aspectRatio;
+  
+  return xy_u;
+}
 
 
 
 fragment float4 fragment_straighten(
   const VertexOutPlonkTexture in [[stage_in]],
-  constant float3x3 &transform [[buffer(0)]],
+  constant StraightenFragmentParams &params [[buffer(0)]],
   const texture2d<float> originalTexture [[texture(0)]]
 //  const texture2d<float> leftTexture [[texture(1)]],
 //  const texture2d<float> rightTexture [[texture(2)]],
@@ -76,8 +106,12 @@ fragment float4 fragment_straighten(
 ) {
   constexpr sampler textureSampler(filter::linear);
   
-  float2 pos = (transform * float3(in.texturePosition, 1)).xy;
-//  
+  float2 pos = (params.straightenTransform * float3(in.texturePosition, 1)).xy;
+  
+  if (params.radialDistortionLambda != 0) {
+    pos = distortion_correction(pos, params.aspectRatio, params.radialDistortionLambda);
+  }
+//
 //  if (in.texturePosition.y < 0.5) {
 //    pos.y *= 2;
 //  } else {
@@ -87,3 +121,6 @@ fragment float4 fragment_straighten(
   
   return color;
 }
+
+
+

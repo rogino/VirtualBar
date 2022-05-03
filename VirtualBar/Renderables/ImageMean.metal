@@ -69,7 +69,8 @@ float2 tangentialDistortion(
 
 
 kernel void line_of_symmetry(
-  texture2d<float> sobelTexture [[texture(0)]]  // https://stackoverflow.com/questions/47738441/passing-textures-with-uint8-component-type-to-metal-compute-shader
+  texture2d<float> sobelTexture [[texture(0)]],
+  // https://stackoverflow.com/questions/47738441/passing-textures-with-uint8-component-type-to-metal-compute-shader
   // Sobel texture is uint8_t but automatically converted to float
   device float *outputBuffer [[buffer(0)]],
   constant LineOfSymmetryArgs &args [[buffer(1)]],

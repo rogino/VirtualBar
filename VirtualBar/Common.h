@@ -62,4 +62,10 @@ typedef struct {
   short offsetYMax; // largest positive y offset
 } StraightenParams;
 
+typedef struct {
+  simd_float3x3 straightenTransform;
+  float aspectRatio;
+  float radialDistortionLambda;
+} StraightenFragmentParams;
+
 #endif /* Common_h */

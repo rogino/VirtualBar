@@ -6,41 +6,44 @@
 //
 
 public class ActiveAreaDetector {
-  enum WeightedAverageType {
-    case triangle, rect
-  }
+//  enum WeightedAverageType {
+//    case triangle, rect
+//  }
   private static func weightedAverage(
     arr: [Float],
     min: Int, size: Int, // start at index for n elements
-    type: WeightedAverageType,
+//    type: WeightedAverageType,
     minWeight: Float = 0,
     cutOffProportion: Float = 0.2 // Ignore first and last x/2 % of the area
   ) -> Float {
     let radius = Float(size - 1) / 2
     let center: Float = Float(min) + radius
     
-    func halfDistributionTriangle(t: Float) -> Float {
-      // t in [0, 1], where 1 is the center of the distribution
-      return t * (1 - minWeight) + minWeight
-    }
-    
-    func halfDistributionCutoffTriangle(t: Float) -> Float {
-      return halfDistributionTriangle(t: max(Float(0), t - cutOffProportion))
-    }
-    
+//    func halfDistributionTriangle(t: Float) -> Float {
+//      // t in [0, 1], where 1 is the center of the distribution
+//      return t * (1 - minWeight) + minWeight
+//    }
+//
+//    func halfDistributionCutoffTriangle(t: Float) -> Float {
+//      return halfDistributionTriangle(t: max(Float(0), t - cutOffProportion))
+//    }
+//
     func halfDistributionCutoffRect(t: Float) -> Float {
       return t < cutOffProportion ? 0: 1
     }
     
-    return (min..<min + size).makeIterator().reduce(0) { current, i in
+    let denominator = size - 2 * Int(ceil(Float(size) * Float(cutOffProportion) / 2))
+                                     
+     return (min..<min + size).makeIterator().reduce(0) { current, i in
       let distanceFromCenter = abs(Float(i) - center) / radius
       let t = 1 - distanceFromCenter
-      let weight = type == .triangle ?
-        halfDistributionCutoffTriangle(t: t):
-        halfDistributionCutoffRect(t: t)
+//      let weight = type == .triangle ?
+//        halfDistributionCutoffTriangle(t: t):
+//        halfDistributionCutoffRect(t: t)
+      let weight = halfDistributionCutoffRect(t: t)
       
       return current + arr[i] * arr[i] * weight
-    } / Float(size)
+    } / Float(denominator)
   }
 
 
@@ -70,8 +73,8 @@ public class ActiveAreaDetector {
             weightedAveragedDerivative: Self.weightedAverage(
               arr: sobelOutput,
               min: current.x,
-              size: current.size,
-              type: .rect
+              size: current.size
+//              type: .rect
             ),
             ranking: -1
           ))

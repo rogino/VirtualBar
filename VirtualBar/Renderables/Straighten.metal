@@ -29,6 +29,12 @@ kernel void straighten_mean_left_right(
   mean.write(sum, pid);
 }
 
+float sobel(ushort x, ushort y, texture2d<float, access::read> tex) {
+  if (y == 0) return 0;
+  if (y + 1 == tex.get_height()) return 0;
+  return tex.read(ushort2(x, y - 1)).r - tex.read(ushort2(x, y + 1)).r;
+}
+
 kernel void straighten_left_right_delta_squared(
   constant StraightenParams& config        [[buffer(0)]],
   texture2d<float, access::write> delta    [[texture(0)]],
@@ -46,6 +52,8 @@ kernel void straighten_left_right_delta_squared(
     return;
   }
   
+//  float  left = abs(sobel(0, yLeft, rowMean));
+//  float right = abs(sobel(1, yRight, rowMean));
   float left  = rowMean.read(ushort2(0, yLeft )).r;
   float right = rowMean.read(ushort2(1, yRight)).r;
   

@@ -118,8 +118,8 @@ public class ImageMean: Renderable {
       source: cpuImageColumnBuffer4UInt8!,
       length: texture.height
     ) as [SIMD4<UInt8>]).map({
-      let val = float3(Float($0.x), Float($0.y), Float($0.z))
-      return length(val)
+      let val = float3(Float($0.x), Float($0.y), Float($0.z))/255
+      return length(val)/3
     })
     
     
@@ -129,6 +129,8 @@ public class ImageMean: Renderable {
       source: cpuImageColumnBufferFloat!,
       length: texture.height
     )
+    
+//    var variance
 
     let sizeRange = self.activeAreaHeightRange(imageHeight: texture.height)
     let candidateAreas = ActiveAreaDetector.detectCandidateAreas(

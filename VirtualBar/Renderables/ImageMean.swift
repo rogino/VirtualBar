@@ -130,8 +130,17 @@ public class ImageMean: Renderable {
       length: texture.height
     )
     
-//    var variance
+    let bla = ActiveAreaDetector.detectKeyboardRows(
+      sobelOutput: sobelOutput,
+      squashOutput: squashOutput
+    )
 
+    Self.activeArea = bla.map { float2(Float($0.x1), Float($0.x2)) }.map {[
+        $0[0] / Float(sobelOutput.count),
+        $0[1] / Float(sobelOutput.count)
+    ]}
+    
+    return
     let sizeRange = self.activeAreaHeightRange(imageHeight: texture.height)
     let candidateAreas = ActiveAreaDetector.detectCandidateAreas(
       sobelOutput: sobelOutput,

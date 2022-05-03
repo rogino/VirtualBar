@@ -3,7 +3,7 @@ import MetalPerformanceShaders
 
 public class Straighten {
   // this section of the left half of texture used in averaging. right is symmetrical
-  var halfSampleTextureSize: (Float, Float) = (0.0, 0.5)
+  var halfSampleTextureSize: (Float, Float) = (0.2, 0.4)
   
   // Max angle to correct
   var maxCorrectionAngleDegrees: Float = 2
@@ -353,15 +353,15 @@ public class Straighten {
     }
     var transform = float3x3(1) // identity
     
-    if angle != nil {
-      transform = createRotationMatrix(angle: angle!, aspectRatio: Float(image.width) / Float(image.height))
-    } else {
-      do {
-        transform = try determineStraightenTransform(image: image)
-      } catch {
-        fatalError()
-      }
-    }
+//    if angle != nil {
+//      transform = createRotationMatrix(angle: angle!, aspectRatio: Float(image.width) / Float(image.height))
+//    } else {
+//      do {
+//        transform = try determineStraightenTransform(image: image)
+//      } catch {
+//        fatalError()
+//      }
+//    }
     commandBuffer.pushDebugGroup("Straighten image transform")
 
     guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(
@@ -377,7 +377,7 @@ public class Straighten {
     var params = StraightenFragmentParams(
       straightenTransform: transform,
       aspectRatio: image.aspectRatio,
-      radialDistortionLambda: Self.radialDistortionLambda
+      radialDistortionLambda: Self.radialDistortionLambda * 0
     )
     
     renderEncoder.setFragmentBytes(

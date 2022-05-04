@@ -16,7 +16,6 @@ public struct CandidateArea: CustomStringConvertible {
   
   let centerBrightness: Float
   let weightedAveragedDerivative: Float
-  var ranking: Int
   
   public var description: String {
     return String(format: "[%d to %d], brightness %.1f, weight %.7f", x1, x2, centerBrightness, weightedAveragedDerivative)
@@ -52,7 +51,6 @@ private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
   // Rank multiplier: when area shows up, don't want it to just immediately go to top
   init(
     initial: CandidateArea,
-    rankMultiplier: Float = 1.0,
     scoringWeightedAveragedDerivativeMaxValue: Float? = nil
   ) {
     x1MovingAverage = ExponentialWeightedMovingAverage(alpha: xAlpha, initialValue: Float(initial.x1))
@@ -107,15 +105,13 @@ private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
 }
 
 public class ActiveAreaSelector {
-  let LOG = true
+  let LOG = CONST.LOG_STRAIGHTEN_SELECTOR
   
   fileprivate var candidates: [CandidateAreaHistory] = []
 
   // For each sample in which the area is not found, the brightness tends to this value
   let brightnessTendsTo: Float = 0
-  let weightedAverageTendsTo: Float = 0.001
-  
-  let initialRankMultiplier: Float = 5.0
+  let weightedAverageTendsTo: Float = 1e-3
   
   // Areas can be += existing areas
   let maxCenterPositionDeviation: Float = 5
@@ -123,7 +119,7 @@ public class ActiveAreaSelector {
   let maxNumCandidates: Int = 4
   
   let maxWeightedAveragedDerivative: Float = 1e-4
-  let minBrightness: Float = 0.05
+  let minScore: Float = 0.9
   
   // Brightness values are much much larger so need to scale weighted averaged derivative
   // by a lot. Also inverting value so that larger values are better
@@ -183,7 +179,6 @@ public class ActiveAreaSelector {
     for newCandidate in sortedCandidates {
       candidates.append(CandidateAreaHistory(
         initial: newCandidate,
-        rankMultiplier: initialRankMultiplier,
         scoringWeightedAveragedDerivativeMaxValue: sortingWeightedAveragedDerivativeMaxValue
       ))
     }
@@ -228,16 +223,22 @@ public class ActiveAreaSelector {
         i += 1
         continue
       }
-      if current.centerBrightness < minBrightness {
+      if current.score < minScore {
         if LOG {
-          print("Removal, brightness:", candidates[i])
-        }
-        candidates.remove(at: i)
-      } else if current.weightedAveragedDerivative > maxWeightedAveragedDerivative {
-        if LOG {
-          print("Removal, weighted averaged derivative:", candidates[i])
-        }
-        candidates.remove(at: i)
+            print("Removal, score:", candidates[i])
+          }
+          candidates.remove(at: i)
+
+//      if current.centerBrightness < minBrightness {
+//        if LOG {
+//          print("Removal, brightness:", candidates[i])
+//        }
+//        candidates.remove(at: i)
+//      } else if current.weightedAveragedDerivative > maxWeightedAveragedDerivative {
+//        if LOG {
+//          print("Removal, weighted averaged derivative:", candidates[i])
+//        }
+//        candidates.remove(at: i)
       } else if sizeRange != nil && (
         current.size < sizeRange!.lowerBound ||
         current.size > sizeRange!.upperBound

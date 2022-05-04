@@ -75,8 +75,7 @@ public class ActiveAreaDetector {
               min: current.x,
               size: current.size
 //              type: .rect
-            ),
-            ranking: -1
+            )
           ))
         }
         current = (x: i, size: 0)

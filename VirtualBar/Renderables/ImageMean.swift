@@ -37,6 +37,11 @@ public class ImageMean: Renderable {
   
   let activeAreaSelector = ActiveAreaSelector()
   
+  var timeGpu: CFAbsoluteTime = 0
+  var timeCpu: CFAbsoluteTime = 0
+  var count = 0
+
+  
   public static var activeArea: [float2] = []
     
   init() {
@@ -82,7 +87,8 @@ public class ImageMean: Renderable {
   }
   
   func runMPS(texture: MTLTexture) {
-    let startTime = CFAbsoluteTimeGetCurrent()
+    var start = CFAbsoluteTimeGetCurrent()
+    
     guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer()
     else { fatalError() }
     commandBuffer.label = "Active area detection"
@@ -109,8 +115,15 @@ public class ImageMean: Renderable {
     
     commandBuffer.waitUntilCompleted()
     commandBuffer.popDebugGroup()
-    // Squash + Sobel + simple symmetry compute: ~1.3 ms
-//    print("GPU Full Pipeline Duration:", CFAbsoluteTimeGetCurrent() - startTime)
+    // Squash + Sobel + simple symmetry compute: ~1.5 ms
+    
+    if CONST.LOG_PERFORMANCE {
+      timeGpu += CFAbsoluteTimeGetCurrent() - start
+      count += 1
+      print("ImageMean GPU: \(1000.0 * timeGpu / Double(count)) ms (\(count))")
+      start = CFAbsoluteTimeGetCurrent()
+    }
+
     
     Straighten.copyTexture(source: squashTextureBuffer!, destination: cpuImageColumnBuffer4UInt8!)
     
@@ -130,8 +143,6 @@ public class ImageMean: Renderable {
       length: texture.height
     )
     
-//    var variance
-
     let sizeRange = self.activeAreaHeightRange(imageHeight: texture.height)
     let candidateAreas = ActiveAreaDetector.detectCandidateAreas(
       sobelOutput: sobelOutput,
@@ -141,7 +152,14 @@ public class ImageMean: Renderable {
     )
     
     activeAreaSelector.update(candidates: candidateAreas, sizeRange: sizeRange)
-    let currentBestGuess = activeAreaSelector.getActiveArea()
+//    let currentBestGuess = activeAreaSelector.getActiveArea()
+    let currentBestGuess = candidateAreas.first
+    
+    if CONST.LOG_PERFORMANCE {
+      timeCpu += CFAbsoluteTimeGetCurrent() - start
+      print("ImageMean CPU: \(1000.0 * timeCpu / Double(count)) ms (\(count))")
+    }
+
     
     if currentBestGuess == nil {
       Self.activeArea = []

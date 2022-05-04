@@ -147,7 +147,7 @@ class FingerDetector {
           ))
         }
       }
-      return points
+//      return points
       
       for hand in results {
         let observation = hand

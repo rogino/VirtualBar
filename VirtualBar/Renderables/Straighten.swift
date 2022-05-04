@@ -14,7 +14,7 @@ public class Straighten {
   static var enableStraightening: Bool = true
   static var detectedAngle: String = ""
   
-  static var radialDistortionLambda: Float = 0.0
+  static var radialDistortionLambda: Float = 0
   
   func makeStraightenParams(
     textureWidth: Int
@@ -339,6 +339,8 @@ public class Straighten {
     if !Self.enableStraightening {
       return image
     }
+    let start = CFAbsoluteTimeGetCurrent()
+
     
     guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer() else {
       fatalError()
@@ -386,10 +388,14 @@ public class Straighten {
     
     renderEncoder.endEncoding()
     commandBuffer.commit()
-//    let time = CFAbsoluteTimeGetCurrent()
     commandBuffer.waitUntilCompleted()
-//    print("Straighten rendering took \(CFAbsoluteTimeGetCurrent() - time)")
     commandBuffer.popDebugGroup()
+    
+    if CONST.LOG_PERFORMANCE {
+      time += CFAbsoluteTimeGetCurrent() - start
+      count += 1
+      print("Full straightening pipeline: \(1000.0 * time / Double(count)) ms (\(count))")
+    }
     
     return straightenedImage!
   }

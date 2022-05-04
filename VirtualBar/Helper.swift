@@ -4,6 +4,11 @@ import MetalKit
 typealias float3 = SIMD3<Float>
 typealias float4 = SIMD4<Float>
 
+struct CONST {
+  static let LOG_PERFORMANCE = false
+  static let LOG_STRAIGHTEN_SELECTOR = false
+}
+
 extension MTLTexture {
   var aspectRatio: Float {
     return Float(width)/Float(height)

@@ -39,6 +39,7 @@
 		4FCB20B02802BBA1003DC9BC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4FCB20AF2802BBA1003DC9BC /* Assets.xcassets */; };
 		4FCB20B32802BBA1003DC9BC /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4FCB20B22802BBA1003DC9BC /* Preview Assets.xcassets */; };
 		4FCB20BB2802BBAB003DC9BC /* MetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FCB20BA2802BBAB003DC9BC /* MetalView.swift */; };
+		4FCED3C92822905800C06355 /* test.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4FCED3C82822905800C06355 /* test.mlpackage */; };
 		4FD9CEBD28100F2500CF79E0 /* PlonkTexture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FD9CEBC28100F2500CF79E0 /* PlonkTexture.swift */; };
 		4FD9CEBF2810100B00CF79E0 /* PlonkTexture.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4FD9CEBE2810100B00CF79E0 /* PlonkTexture.metal */; };
 		4FD9CEC12810112E00CF79E0 /* PlonkTextureShared.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4FD9CEC02810112E00CF79E0 /* PlonkTextureShared.metal */; };
@@ -83,6 +84,7 @@
 		4FCB20B22802BBA1003DC9BC /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		4FCB20B42802BBA1003DC9BC /* VirtualBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VirtualBar.entitlements; sourceTree = "<group>"; };
 		4FCB20BA2802BBAB003DC9BC /* MetalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalView.swift; sourceTree = "<group>"; };
+		4FCED3C82822905800C06355 /* test.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = test.mlpackage; sourceTree = "<group>"; };
 		4FD9CEBC28100F2500CF79E0 /* PlonkTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlonkTexture.swift; sourceTree = "<group>"; };
 		4FD9CEBE2810100B00CF79E0 /* PlonkTexture.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PlonkTexture.metal; sourceTree = "<group>"; };
 		4FD9CEC02810112E00CF79E0 /* PlonkTextureShared.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PlonkTextureShared.metal; sourceTree = "<group>"; };
@@ -197,6 +199,7 @@
 				4F2035C72802BC8100F89CAE /* Renderer.swift */,
 				4FA1970D2819283600F96355 /* FingerDetector.swift */,
 				4F1336C42813AAAA004B4ECD /* GestureRecognizer.swift */,
+				4FCED3C82822905800C06355 /* test.mlpackage */,
 				4F2035BA2802BC8100F89CAE /* Renderables */,
 				4F2035C62802BC8100F89CAE /* Shaders.metal */,
 				4F52CA132810E0E100EEB655 /* MovingAverage */,
@@ -304,6 +307,7 @@
 				4F1336C72813C098004B4ECD /* VolumeControl.swift in Sources */,
 				4F2035D72802BC8100F89CAE /* Helper.swift in Sources */,
 				4FA2B0B12818DCDD0025A67E /* brightness.c in Sources */,
+				4FCED3C92822905800C06355 /* test.mlpackage in Sources */,
 				4F2035D52802BC8100F89CAE /* Shaders.metal in Sources */,
 				4FD9CEBF2810100B00CF79E0 /* PlonkTexture.metal in Sources */,
 				4F2035D22802BC8100F89CAE /* Triangle.swift in Sources */,
@@ -457,6 +461,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rioogino.virtualbar;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -490,6 +495,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rioogino.virtualbar;
 				PRODUCT_NAME = "$(TARGET_NAME)";

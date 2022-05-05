@@ -161,32 +161,32 @@ public class ImageMean: Renderable {
       print("ImageMean CPU: \(1000.0 * timeCpu / Double(count)) ms (\(count))")
     }
 
-    if #available(macOS 12.0, *) {
-      if sobelOutput.count != 720 {
-        return
-      }
-      do {
-        let bla = try MLMultiArray(shape: [1, 720], dataType: .float32)
-        sobelOutput.enumerated().forEach {
-          bla[$0.0] = NSNumber(value: $0.1)
-        }
-        
-        let input = testInput(dense_4_input: bla)
-        let output = try test().prediction(input: input)
-        let bottom = output.Identity[0].floatValue
-        
-        Self.activeArea = [[
-          bottom - 0.05,
-          bottom,
-        ]]
-        return
-      } catch {
-        print(error.localizedDescription)
-      }
-    } else {
-      // Fallback on earlier versions
-    }
-    
+//    if #available(macOS 12.0, *) {
+//      if sobelOutput.count != 720 {
+//        return
+//      }
+//      do {
+//        let bla = try MLMultiArray(shape: [1, 720], dataType: .float32)
+//        sobelOutput.enumerated().forEach {
+//          bla[$0.0] = NSNumber(value: $0.1)
+//        }
+//
+//        let input = testInput(dense_4_input: bla)
+//        let output = try test().prediction(input: input)
+//        let bottom = output.Identity[0].floatValue
+//
+//        Self.activeArea = [[
+//          bottom - 0.05,
+//          bottom,
+//        ]]
+//        return
+//      } catch {
+//        print(error.localizedDescription)
+//      }
+//    } else {
+//      // Fallback on earlier versions
+//    }
+//
     if currentBestGuess == nil {
       Self.activeArea = []
     } else {

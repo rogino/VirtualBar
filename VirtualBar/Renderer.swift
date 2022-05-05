@@ -116,20 +116,34 @@ extension Renderer: MTKViewDelegate {
   
   func processFrame(texture: MTLTexture, cmSample: CMSampleBuffer) {
     self.cameraTexture = texture
-    self.straightenedCameraTexture = straightener.straighten(image: texture)
-    fingerPoints = fingerDetector.detectFingers(sampleBuffer: cmSample)
+//    self.straightenedCameraTexture = straightener.straighten(image: texture)
+//    fingerPoints = fingerDetector.detectFingers(sampleBuffer: cmSample)
     
-    self.imageMean.texture = straightenedCameraTexture
-    self.fingerPointsRenderer.fingerPoints = fingerPoints
+//    self.imageMean.texture = straightenedCameraTexture
+//    self.fingerPointsRenderer.fingerPoints = fingerPoints
   }
   
   func processFrame(texture: MTLTexture, cgImage: CGImage) {
     self.cameraTexture = texture
-    self.straightenedCameraTexture = straightener.straighten(image: texture)
-    fingerPoints = fingerDetector.detectFingers(image: cgImage)
+//    self.straightenedCameraTexture = straightener.straighten(image: texture)
+//    fingerPoints = fingerDetector.detectFingers(image: cgImage)
+//
+//    self.imageMean.texture = straightenedCameraTexture
+//    self.fingerPointsRenderer.fingerPoints = fingerPoints
     
-    self.imageMean.texture = straightenedCameraTexture
-    self.fingerPointsRenderer.fingerPoints = fingerPoints
+    imageMean.texture = texture
+    imageMean.runMPS(texture: texture)
+    var descriptor = ""
+    if let area = ImageMean.activeArea.first {
+//      https://github.com/AlexeyAB/Yolo_mark/issues/60
+      descriptor = "0 0.5 \((area.x + area.y) / 2) 1 \(area.y - area.x)"
+    }
+    
+//  https://stackoverflow.com/questions/1320988/saving-cgimageref-to-a-png-file
+//    let outPath = URL.init(fileURLWithPath: "")
+//    guard let destination = CGImageDestinationCreateWithURL(destinationURL as CFURL, kUTTypePNG, 1, nil) else { return false }
+//        CGImageDestinationAddImage(destination, image, nil)
+//        return CGImageDestinationFinalize(destination)
   }
 }
 
@@ -176,7 +190,12 @@ extension Renderer: AVCaptureVideoDataOutputSampleBufferDelegate {
       fatalError("Failed to get camera MTLTexture")
     }
     
-    processFrame(texture: texture, cmSample: sampleBuffer)
+    
+    let ciImage = CIImage(cvPixelBuffer: imageBuffer)
+    let context = CIContext(options: nil)
+    let cgImage = context.createCGImage(ciImage, from: ciImage.extent)!
+    
+    processFrame(texture: texture, cgImage: cgImage)
   }
 }
 

@@ -9,7 +9,7 @@ public class Straighten {
   var maxCorrectionAngleDegrees: Float = 2
   
   
-  var movingAverage = ExponentialWeightedMovingAverage(alpha: 0.05, invalidUntilNSamples: 20, initialValue: 0.0)
+  var movingAverage = ExponentialWeightedMovingAverage(alpha: 0.01, initialValue: 0.0)
   
   static var enableStraightening: Bool = true
   static var detectedAngle: String = ""

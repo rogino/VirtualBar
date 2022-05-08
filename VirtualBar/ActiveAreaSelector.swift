@@ -37,9 +37,9 @@ private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
   var size: Float { x2 - x1 }
   var center: Float { (x1 + x2) / 2 }
   
-  var xAlpha: Float = 0.05
-  var centerBrightnessAlpha: Float = 0.05
-  var weightedAveragedDerivativeAlpha: Float = 0.05
+  var xAlpha: Float = 1
+  var centerBrightnessAlpha: Float = 0.01
+  var weightedAveragedDerivativeAlpha: Float = 0.01
   
   // Brightness values are much much larger so need to scale weighted averaged derivative
   // by a lot. brightness + (max - weighted derivative)/max
@@ -105,13 +105,13 @@ private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
 }
 
 public class ActiveAreaSelector {
-  let LOG = CONST.LOG_STRAIGHTEN_SELECTOR
+  let LOG = CONST.LOG_ACTIVE_AREA_SELECTOR
   
   fileprivate var candidates: [CandidateAreaHistory] = []
 
   // For each sample in which the area is not found, the brightness tends to this value
   let brightnessTendsTo: Float = 0
-  let weightedAverageTendsTo: Float = 1e-3
+  let weightedAverageTendsTo: Float = 1e-4
   
   // Areas can be += existing areas
   let maxCenterPositionDeviation: Float = 5

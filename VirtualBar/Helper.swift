@@ -7,6 +7,7 @@ typealias float4 = SIMD4<Float>
 struct CONST {
   static let LOG_PERFORMANCE = false
   static let LOG_STRAIGHTEN_SELECTOR = false
+  static let LOG_ACTIVE_AREA_SELECTOR = false
 }
 
 extension MTLTexture {

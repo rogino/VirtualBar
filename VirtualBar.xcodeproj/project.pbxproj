@@ -28,6 +28,7 @@
 		4F52CA162810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F52CA142810E0E100EEB655 /* ExponentialWeightedMovingAverage.swift */; };
 		4F52CA172810E0E100EEB655 /* MovingAverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F52CA152810E0E100EEB655 /* MovingAverage.swift */; };
 		4F71E3B22818DB8E00F2B043 /* BrightnessControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F71E3B12818DB8E00F2B043 /* BrightnessControl.swift */; };
+		4F7D8C4F2827D23500A804D2 /* Hough.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7D8C4E2827D23500A804D2 /* Hough.swift */; };
 		4FA1970E2819283600F96355 /* FingerDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA1970D2819283600F96355 /* FingerDetector.swift */; };
 		4FA2B0B12818DCDD0025A67E /* brightness.c in Sources */ = {isa = PBXBuildFile; fileRef = 4FA2B0B02818DBF00025A67E /* brightness.c */; };
 		4FA2B0B32818DD480025A67E /* LICENCE in Resources */ = {isa = PBXBuildFile; fileRef = 4FA2B0B22818DD480025A67E /* LICENCE */; };
@@ -69,6 +70,7 @@
 		4F52CA152810E0E100EEB655 /* MovingAverage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MovingAverage.swift; sourceTree = "<group>"; };
 		4F71E3B02818D86000F2B043 /* BridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BridgingHeader.h; sourceTree = "<group>"; };
 		4F71E3B12818DB8E00F2B043 /* BrightnessControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessControl.swift; sourceTree = "<group>"; };
+		4F7D8C4E2827D23500A804D2 /* Hough.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hough.swift; sourceTree = "<group>"; };
 		4FA1970D2819283600F96355 /* FingerDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerDetector.swift; sourceTree = "<group>"; };
 		4FA2B0AF2818DBF00025A67E /* brightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = brightness.h; sourceTree = "<group>"; };
 		4FA2B0B02818DBF00025A67E /* brightness.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = brightness.c; sourceTree = "<group>"; };
@@ -124,6 +126,7 @@
 				4FD9CEBC28100F2500CF79E0 /* PlonkTexture.swift */,
 				4FB73A70280E9D5D00EE0311 /* Straighten.swift */,
 				4FB73A72280EA1A300EE0311 /* Straighten.metal */,
+				4F7D8C4E2827D23500A804D2 /* Hough.swift */,
 				4FD9CEBE2810100B00CF79E0 /* PlonkTexture.metal */,
 				4FD9CEC02810112E00CF79E0 /* PlonkTextureShared.metal */,
 				4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */,
@@ -288,6 +291,7 @@
 			files = (
 				4F2035CB2802BC8100F89CAE /* FingerPointsRenderer.metal in Sources */,
 				4F52CA172810E0E100EEB655 /* MovingAverage.swift in Sources */,
+				4F7D8C4F2827D23500A804D2 /* Hough.swift in Sources */,
 				4FA1970E2819283600F96355 /* FingerDetector.swift in Sources */,
 				4F33FE18281160690035937D /* ActiveAreaDetector.swift in Sources */,
 				4FD9CEC12810112E00CF79E0 /* PlonkTextureShared.metal in Sources */,

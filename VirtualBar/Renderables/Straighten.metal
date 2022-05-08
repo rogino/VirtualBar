@@ -127,5 +127,3 @@ fragment float4 fragment_straighten(
   return color;
 }
 
-
-

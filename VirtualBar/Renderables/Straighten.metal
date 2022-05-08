@@ -22,8 +22,9 @@ kernel void straighten_mean_left_right(
   
   float sum = 0;
   for(ushort x = 0; x < config.width; x++) {
-    float3 sample = image.read(ushort2(startX + x, pid.y)).rgb;
-    sum += length(sample);
+//    float3 sample = image.read(ushort2(startX + x, pid.y)).rgb;
+//    sum += length(sample);
+    sum += image.read(ushort2(startX + x, pid.y)).r;
   }
   sum /= config.width;
   mean.write(sum, pid);
@@ -63,8 +64,12 @@ kernel void straighten_left_right_delta_squared(
   float numerator = diff * diff;
   
   float larger = left > right ? left: right;
-  float denominator = larger * larger;
+  if (larger == 0) {
+    delta.write(0, pid.yx);
+    return;
+  }
   
+  float denominator = larger * larger;
   delta.write(numerator/denominator, pid.yx); // y is image y axis, x is i
 }
 
@@ -126,6 +131,3 @@ fragment float4 fragment_straighten(
   
   return color;
 }
-
-
-

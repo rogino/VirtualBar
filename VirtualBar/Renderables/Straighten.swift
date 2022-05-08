@@ -49,6 +49,7 @@ public class Straighten {
   var straightenDeltaSquaredPSO: MTLComputePipelineState
   var rowSquashEncoder: MPSUnaryImageKernel
   var colSquashEncoder: MPSUnaryImageKernel
+  var cannyEncoder: MPSImageCanny
   
   
   var cannyTextureBuffer: MTLTexture?
@@ -65,6 +66,8 @@ public class Straighten {
     straightenDeltaSquaredPSO = Self.makeStraightenDeltaSquaredPSO()
     rowSquashEncoder = MPSImageReduceRowMean(device: Renderer.device)
     colSquashEncoder = MPSImageReduceColumnMean(device: Renderer.device)
+    cannyEncoder     = MPSImageCanny(device: Renderer.device)
+
   }
   
   static func makeStraightenMeanPSO() -> MTLComputePipelineState {
@@ -123,6 +126,15 @@ public class Straighten {
       fatalError()
     }
     straightenedImage?.label = "Straightened image"
+    
+    
+    textureDescriptor.usage = [.shaderWrite, .shaderRead]
+    textureDescriptor.pixelFormat = .r16Float
+    cannyTextureBuffer = Renderer.device.makeTexture(descriptor: textureDescriptor)
+    if cannyTextureBuffer == nil {
+      fatalError()
+    }
+    cannyTextureBuffer?.label = "Canny image"
     
     
     textureDescriptor.pixelFormat = .r32Float
@@ -232,18 +244,28 @@ public class Straighten {
   }
   
   func determineStraightenTransform(image: MTLTexture) throws -> simd_float3x3 {
-    guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer() else {
+    guard let commandBuffer = Renderer.commandQueue.makeCommandBuffer(),
+          let cannyTexture = cannyTextureBuffer
+    else {
       fatalError()
     }
     commandBuffer.label = "Determine straightening angle"
     
+    commandBuffer.pushDebugGroup("Canny edge detection")
+    cannyEncoder.encode(
+      commandBuffer: commandBuffer,
+      sourceTexture: image,
+      destinationTexture: cannyTexture
+    )
+    commandBuffer.popDebugGroup()
+    
     // Copy segments from the left and right sides of the image into their own textures
     let params = makeStraightenParams(textureWidth: image.width)
-    straightenCalculateLeftRightMean(commandBuffer: commandBuffer, image: image, params: params)
+    straightenCalculateLeftRightMean(commandBuffer: commandBuffer, image: cannyTexture, params: params)
     
     // Calculate the difference squared between the left and right halves of the image
     // Do this multiple times by sliding/offsetting the right image up/down by a few pixels
-    straightenCalculateDeltaSquared(commandBuffer: commandBuffer, image: image, params: params)
+    straightenCalculateDeltaSquared(commandBuffer: commandBuffer, image: cannyTexture, params: params)
     
     // For each offset, determine the average difference. Due to the presence of strong horizontal lines,
     // this should be lowest when you have the correct angle
@@ -255,7 +277,6 @@ public class Straighten {
       destinationTexture: deltaAveragedTexture!
     )
     commandBuffer.popDebugGroup()
-    
     
     commandBuffer.commit()
     commandBuffer.waitUntilCompleted()
@@ -351,7 +372,7 @@ public class Straighten {
       try! makeTextureBuffers(texture: image)
     }
     var transform = float3x3(1) // identity
-    
+
     if angle != nil {
       transform = createRotationMatrix(angle: angle!, aspectRatio: Float(image.width) / Float(image.height))
     } else {
@@ -363,29 +384,30 @@ public class Straighten {
     }
     commandBuffer.pushDebugGroup("Straighten image transform")
 
+
     guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(
       descriptor: Self.makeStraightenRenderPassDescriptor(outputTexture: straightenedImage!)
     ) else { fatalError() }
-    
+
     renderEncoder.setRenderPipelineState(straightenOutputPSO)
-    
+
     renderEncoder.setTriangleFillMode(.fill)
-    
+
     renderEncoder.setFragmentTexture(image, index: 0)
-    
+
     var params = StraightenFragmentParams(
       straightenTransform: transform,
       aspectRatio: image.aspectRatio,
       radialDistortionLambda: Self.radialDistortionLambda
     )
-    
+
     renderEncoder.setFragmentBytes(
       &params,
       length: MemoryLayout<StraightenFragmentParams>.stride,
       index: 0
     )
     renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
-    
+
     renderEncoder.endEncoding()
     commandBuffer.commit()
     commandBuffer.waitUntilCompleted()

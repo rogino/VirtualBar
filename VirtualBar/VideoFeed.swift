@@ -54,7 +54,6 @@ class VideoFeed {
     )
     
     currentTime = self.frameRange?.lowerBound ?? 0
-
   }
   
   @objc func timerCallback() {

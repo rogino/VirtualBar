@@ -66,6 +66,7 @@ class FingerDetector {
     return detectFingers(handler: handler)
   }
   
+  var timer: (time: Double, count: Double) = (0, 0)
   private func detectFingers(handler: VNImageRequestHandler) -> [simd_float3] {
     // https://developer.apple.com/videos/play/wwdc2020/10653/
     
@@ -85,9 +86,14 @@ class FingerDetector {
     var points: [simd_float3] = []
     
     do {
+      let start = CFAbsoluteTimeGetCurrent()
       try handler.perform([handPoseRequest])
       guard let results = handPoseRequest.results, results.count > 0 else {
         return []
+      }
+      if CONST.LOG_PERFORMANCE {
+        timer = (time: timer.time + CFAbsoluteTimeGetCurrent() - start, count: timer.count + 1)
+        print("Hand pose request: \(timer.time * 1000 / timer.count) ms (avg. over \(Int(timer.count)) calls)")
       }
 
       

@@ -24,6 +24,8 @@ class Renderer: NSObject {
   
   var imageMean: ImageMean
   var fingerPointsRenderer: FingerPointsRenderer
+  
+  var timer: (time: Double, count: Double) = (0, 0)
 
   public convenience init(metalView: MTKView) {
     guard let device = MTLCreateSystemDefaultDevice() else {
@@ -115,21 +117,36 @@ extension Renderer: MTKViewDelegate {
   }
   
   func processFrame(texture: MTLTexture, cmSample: CMSampleBuffer) {
+    let start = CFAbsoluteTimeGetCurrent()
     self.cameraTexture = texture
     self.straightenedCameraTexture = straightener.straighten(image: texture)
     fingerPoints = fingerDetector.detectFingers(sampleBuffer: cmSample)
     
     self.imageMean.texture = straightenedCameraTexture
     self.fingerPointsRenderer.fingerPoints = fingerPoints
+    
+    if CONST.LOG_PERFORMANCE {
+      printPerformance(startTime: start)
+    }
   }
   
   func processFrame(texture: MTLTexture, cgImage: CGImage) {
+    let start = CFAbsoluteTimeGetCurrent()
     self.cameraTexture = texture
     self.straightenedCameraTexture = straightener.straighten(image: texture)
     fingerPoints = fingerDetector.detectFingers(image: cgImage)
     
     self.imageMean.texture = straightenedCameraTexture
     self.fingerPointsRenderer.fingerPoints = fingerPoints
+    if CONST.LOG_PERFORMANCE {
+      printPerformance(startTime: start)
+    }
+  }
+  
+  
+  func printPerformance(startTime: CFAbsoluteTime) {
+    timer = (time: timer.time + CFAbsoluteTimeGetCurrent() - startTime, count: timer.count + 1)
+    print("Full request duration: \(timer.time * 1000 / timer.count) ms (avg. over \(Int(timer.count)) calls)")
   }
 }
 

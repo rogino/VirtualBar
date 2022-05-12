@@ -66,15 +66,16 @@ class FingerDetector {
     return detectFingers(handler: handler)
   }
   
-  var timer: (time: Double, count: Double) = (0, 0)
+  var timer: (time: Double, count: Int) = (0, 0)
   private func detectFingers(handler: VNImageRequestHandler) -> [simd_float3] {
     // https://developer.apple.com/videos/play/wwdc2020/10653/
     
-    let activeAreaTopOffset: Float = 0.05 // Look 5% above where the active area starts
+    let activeAreaTopOffset: Float = 0.10 // Look 10% above where the active area starts
     
     // Ignore area above active area - get rid of reflections being detected as hands
     let activeArea = ImageMean.activeArea.first ?? [-1, -1]
     let activeAreaTop = activeArea.x >= 0 ? max(0.0, activeArea.x - activeAreaTopOffset) : 0.0 // Allow fingers to extend slightly above the active area
+//    let activeAreaTop: Float = 0.0
     let yScale = 1.0 - activeAreaTop
     handPoseRequest.regionOfInterest = CGRect(
       x: 0.0,
@@ -93,7 +94,9 @@ class FingerDetector {
       }
       if CONST.LOG_PERFORMANCE {
         timer = (time: timer.time + CFAbsoluteTimeGetCurrent() - start, count: timer.count + 1)
-        print("Hand pose request: \(timer.time * 1000 / timer.count) ms (avg. over \(Int(timer.count)) calls)")
+        if timer.count % 100 == 0 {
+          print("Hand pose request: \(timer.time * 1000 / Double(timer.count)) ms (avg. over \(timer.count) calls)")
+        }
       }
 
       

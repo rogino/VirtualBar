@@ -10,11 +10,12 @@ public class Straighten {
   
   
   var movingAverage = ExponentialWeightedMovingAverage(alpha: 0.01, initialValue: 0.0)
+//  var movingAverage = ExponentialWeightedMovingAverage(alpha: 1.0, initialValue: 0.0)
   
   static var enableStraightening: Bool = true
   static var detectedAngle: String = ""
   
-  static var radialDistortionLambda: Float = 0
+  static var radialDistortionLambda: Float = 0.02
   
   func makeStraightenParams(
     textureWidth: Int
@@ -260,6 +261,12 @@ public class Straighten {
     commandBuffer.commit()
     commandBuffer.waitUntilCompleted()
     
+    func variance(_ arr: [Float]) -> Float {
+      let mean = arr.reduce(Float(0), { $0 + $1 }) / Float(arr.count)
+      let variance = arr.map { pow(mean - $0, 2) }.reduce(Float(0), {$0 + $1}) / Float(arr.count - 1)
+      return variance
+    }
+ 
     Self.copyTexture(source: deltaAveragedTexture!, destination: deltaAveragedCPU!)
     let averageDelta = Self.copyPixelsToArray(source: deltaAveragedCPU!, length: deltaTexture!.width)
       .enumerated().map({ $0.1 * Float(image.height) / ((Float(image.height) - 2 * abs(Float(params.offsetYMin) + Float($0.0)))) })
@@ -267,6 +274,7 @@ public class Straighten {
     // with the offset, so correct this
     let angle = calculateCorrectionAngle(avgDelta: averageDelta, params: params)
     
+//    print(variance(averageDelta), averageDelta.reduce(Float(0), { $0 + $1 }) / Float(averageDelta.count))
     movingAverage.input(angle)
     
     let averagedAngle = movingAverage.output()
@@ -334,6 +342,8 @@ public class Straighten {
   
   
   var time: CFAbsoluteTime = 0
+  var timeStraightenAngle: CFAbsoluteTime = 0
+  var timeStraightenTransform: CFAbsoluteTime = 0
   var count = 0
   public func straighten(image: MTLTexture, angle: Float? = nil) -> MTLTexture {
     if !Self.enableStraightening {
@@ -352,6 +362,7 @@ public class Straighten {
     }
     var transform = float3x3(1) // identity
     
+    let sStart = CFAbsoluteTimeGetCurrent()
     if angle != nil {
       transform = createRotationMatrix(angle: angle!, aspectRatio: Float(image.width) / Float(image.height))
     } else {
@@ -361,6 +372,8 @@ public class Straighten {
         fatalError()
       }
     }
+    let sEnd = CFAbsoluteTimeGetCurrent()
+    timeStraightenAngle += sEnd - sStart
     commandBuffer.pushDebugGroup("Straighten image transform")
 
     guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(
@@ -391,10 +404,15 @@ public class Straighten {
     commandBuffer.waitUntilCompleted()
     commandBuffer.popDebugGroup()
     
+    timeStraightenTransform += CFAbsoluteTimeGetCurrent() - sEnd
+    time += CFAbsoluteTimeGetCurrent() - start
+    count += 1
     if CONST.LOG_PERFORMANCE {
-      time += CFAbsoluteTimeGetCurrent() - start
-      count += 1
-      print("Full straightening pipeline: \(1000.0 * time / Double(count)) ms (\(count))")
+      if count % 100 == 0 {
+        print("Straighten Angle: \(1000.0 * timeStraightenAngle / Double(count)) ms (\(count))")
+        print("Straighten transform: \(1000.0 * timeStraightenTransform / Double(count)) ms (\(count))")
+        print("Full straightening pipeline: \(1000.0 * time / Double(count)) ms (\(count))")
+      }
     }
     
     return straightenedImage!

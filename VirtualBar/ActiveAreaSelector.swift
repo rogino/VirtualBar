@@ -37,9 +37,9 @@ private class CandidateAreaHistory: CustomStringConvertible, Identifiable {
   var size: Float { x2 - x1 }
   var center: Float { (x1 + x2) / 2 }
   
-  var xAlpha: Float = 1
-  var centerBrightnessAlpha: Float = 0.01
-  var weightedAveragedDerivativeAlpha: Float = 0.01
+  var xAlpha: Float = 0.3
+  var centerBrightnessAlpha: Float = 0.03
+  var weightedAveragedDerivativeAlpha: Float = 0.03
   
   // Brightness values are much much larger so need to scale weighted averaged derivative
   // by a lot. brightness + (max - weighted derivative)/max
@@ -119,7 +119,7 @@ public class ActiveAreaSelector {
   let maxNumCandidates: Int = 4
   
   let maxWeightedAveragedDerivative: Float = 1e-4
-  let minScore: Float = 0.9
+  let minScore: Float = 0.4
   
   // Brightness values are much much larger so need to scale weighted averaged derivative
   // by a lot. Also inverting value so that larger values are better

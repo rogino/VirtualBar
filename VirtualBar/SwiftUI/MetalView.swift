@@ -38,6 +38,7 @@ struct MetalView: View {
   @State private var metalView = MTKView()
   @State private var renderer: Renderer?
  
+//  let useLiveCamera = true
   let useLiveCamera = true
   @State private var captureSession = AVCaptureSession()
   @State private var videoFeed: VideoFeed?
@@ -52,7 +53,8 @@ struct MetalView: View {
         } else {
           videoFeed = VideoFeed(
             renderer: renderer!,
-            videoPath: "/Users/rioog/Documents/MetalTutorial/virtualbar/hand_gesture_data/Movie on 26-04-22 at 13.46.mov"
+//            videoPath: "/Users/rioog/Documents/MetalTutorial/virtualbar/hand_gesture_data/Movie on 26-04-22 at 13.46.mov"
+            videoPath: "/Users/rioog/Library/CloudStorage/OneDrive-UniversityofCanterbury/2022/Semester 1/COSC428/Project/report/images/horrible_keyboard/15.mp4"
           )
         }
       }.onDisappear {

@@ -18,9 +18,13 @@ enum GestureChange {
 }
 
 struct GestureState {
-  let historySize: Int = 10
-  let startThreshold: Int = 7
-  let stopThreshold: Int = 6
+//  let historySize: Int = 6
+//  let startThreshold: Int = 4
+//  let stopThreshold: Int = 3
+  
+  let historySize: Int = 3
+  let startThreshold: Int = 2
+  let stopThreshold: Int = 2
   
   var startPosition: Float? = nil
   var history: [GestureType] = []

@@ -25,7 +25,7 @@ class Renderer: NSObject {
   var imageMean: ImageMean
   var fingerPointsRenderer: FingerPointsRenderer
   
-  var timer: (time: Double, count: Double) = (0, 0)
+  var timer: (time: Double, count: Int) = (0, 0)
 
   public convenience init(metalView: MTKView) {
     guard let device = MTLCreateSystemDefaultDevice() else {
@@ -146,7 +146,9 @@ extension Renderer: MTKViewDelegate {
   
   func printPerformance(startTime: CFAbsoluteTime) {
     timer = (time: timer.time + CFAbsoluteTimeGetCurrent() - startTime, count: timer.count + 1)
-    print("Full request duration: \(timer.time * 1000 / timer.count) ms (avg. over \(Int(timer.count)) calls)")
+    if timer.count % 100 == 0 {
+      print("Full request duration: \(timer.time * 1000 / Double(timer.count)) ms (avg. over \(Int(timer.count)) calls)")
+    }
   }
 }
 

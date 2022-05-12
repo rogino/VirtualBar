@@ -117,12 +117,12 @@ public class ImageMean: Renderable {
     commandBuffer.popDebugGroup()
     // Squash + Sobel + simple symmetry compute: ~1.5 ms
     
-    if CONST.LOG_PERFORMANCE {
-      timeGpu += CFAbsoluteTimeGetCurrent() - start
-      count += 1
+    count += 1
+    timeGpu += CFAbsoluteTimeGetCurrent() - start
+    if CONST.LOG_PERFORMANCE && count % 100 == 0 {
       print("ImageMean GPU: \(1000.0 * timeGpu / Double(count)) ms (\(count))")
-      start = CFAbsoluteTimeGetCurrent()
     }
+    start = CFAbsoluteTimeGetCurrent()
 
     
     Straighten.copyTexture(source: squashTextureBuffer!, destination: cpuImageColumnBuffer4UInt8!)
@@ -155,8 +155,8 @@ public class ImageMean: Renderable {
 //    let currentBestGuess = activeAreaSelector.getActiveArea()
     let currentBestGuess = candidateAreas.first
     
-    if CONST.LOG_PERFORMANCE {
-      timeCpu += CFAbsoluteTimeGetCurrent() - start
+    timeCpu += CFAbsoluteTimeGetCurrent() - start
+    if CONST.LOG_PERFORMANCE && count % 100 == 0 {
       print("ImageMean CPU: \(1000.0 * timeCpu / Double(count)) ms (\(count))")
     }
 

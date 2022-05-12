@@ -8,23 +8,25 @@ class Renderer: NSObject {
 
   var pipelineState: MTLRenderPipelineState!
   
-  var straightener: Straighten
+//  var straightener: Straighten
   
   var renderables: [Renderable] = []
   
-  let fingerDetector: FingerDetector
+//  let fingerDetector: FingerDetector
   var fingerPoints: [simd_float3] = []
   
   static var aspect: Float = 1.0
   
   var cameraTexture: MTLTexture? = nil
-  var straightenedCameraTexture: MTLTexture? = nil
+//  var straightenedCameraTexture: MTLTexture? = nil
   
   var cameraTextureCache: CVMetalTextureCache?
   
-  var imageMean: ImageMean
-  var fingerPointsRenderer: FingerPointsRenderer
+//  var imageMean: ImageMean
+//  var fingerPointsRenderer: FingerPointsRenderer
   
+  
+  var startTime: CFAbsoluteTime = 0
   var timer: (time: Double, count: Int) = (0, 0)
 
   public convenience init(metalView: MTKView) {
@@ -46,11 +48,11 @@ class Renderer: NSObject {
     
 //    self.depthStencilState = Self.buildDepthStencilState()!
     
-    self.straightener = Straighten()
-    self.imageMean = ImageMean()
-    self.fingerPointsRenderer = FingerPointsRenderer()
-    
-    self.fingerDetector = FingerDetector(activeAreaSelector: imageMean.activeAreaSelector)
+//    self.straightener = Straighten()
+//    self.imageMean = ImageMean()
+//    self.fingerPointsRenderer = FingerPointsRenderer()
+//
+//    self.fingerDetector = FingerDetector(activeAreaSelector: imageMean.activeAreaSelector)
     
     super.init()
     metalView.delegate = self
@@ -60,9 +62,9 @@ class Renderer: NSObject {
     
 //    renderables.append(Sphere())
 //    renderables.append(Triangle())
-    renderables.append(imageMean)
-//    renderables.append(PlonkTexture())
-    renderables.append(fingerPointsRenderer)
+//    renderables.append(imageMean)
+    renderables.append(PlonkTexture())
+//    renderables.append(fingerPointsRenderer)
   }
 
   // Library: set of metal functions
@@ -99,11 +101,12 @@ extension Renderer: MTKViewDelegate {
 //    renderEncoder.setDepthStencilState(depthStencilState)
     
     for renderable in renderables {
-      if straightenedCameraTexture != nil {
+//      if straightenedCameraTexture != nil {
         if let plonkTexture = renderable as? PlonkTexture {
-          plonkTexture.texture = straightenedCameraTexture
+//          plonkTexture.texture = straightenedCameraTexture
+          plonkTexture.texture = cameraTexture
         }
-      }
+//      }
       renderable.draw(renderEncoder: renderEncoder)
     }
 
@@ -114,16 +117,22 @@ extension Renderer: MTKViewDelegate {
     commandBuffer.present(drawable)
     
     commandBuffer.commit()
+    commandBuffer.addCompletedHandler { [self]_ in
+      if startTime != 0 {
+        printPerformance(startTime: startTime)
+        
+      }
+    }
   }
   
   func processFrame(texture: MTLTexture, cmSample: CMSampleBuffer) {
     let start = CFAbsoluteTimeGetCurrent()
     self.cameraTexture = texture
-    self.straightenedCameraTexture = straightener.straighten(image: texture)
-    fingerPoints = fingerDetector.detectFingers(sampleBuffer: cmSample)
-    
-    self.imageMean.texture = straightenedCameraTexture
-    self.fingerPointsRenderer.fingerPoints = fingerPoints
+//    self.straightenedCameraTexture = straightener.straighten(image: texture)
+//    fingerPoints = fingerDetector.detectFingers(sampleBuffer: cmSample)
+//
+//    self.imageMean.texture = straightenedCameraTexture
+//    self.fingerPointsRenderer.fingerPoints = fingerPoints
     
     if CONST.LOG_PERFORMANCE {
       printPerformance(startTime: start)
@@ -133,11 +142,11 @@ extension Renderer: MTKViewDelegate {
   func processFrame(texture: MTLTexture, cgImage: CGImage) {
     let start = CFAbsoluteTimeGetCurrent()
     self.cameraTexture = texture
-    self.straightenedCameraTexture = straightener.straighten(image: texture)
-    fingerPoints = fingerDetector.detectFingers(image: cgImage)
-    
-    self.imageMean.texture = straightenedCameraTexture
-    self.fingerPointsRenderer.fingerPoints = fingerPoints
+//    self.straightenedCameraTexture = straightener.straighten(image: texture)
+//    fingerPoints = fingerDetector.detectFingers(image: cgImage)
+//
+//    self.imageMean.texture = straightenedCameraTexture
+//    self.fingerPointsRenderer.fingerPoints = fingerPoints
     if CONST.LOG_PERFORMANCE {
       printPerformance(startTime: start)
     }
@@ -165,7 +174,7 @@ extension Renderer: AVCaptureVideoDataOutputSampleBufferDelegate {
   }
   
   func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-//    print("Buffer outputted")
+    startTime = CFAbsoluteTimeGetCurrent()
     guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
       fatalError("Conversion from CMSampleBuffer to CVImageBuffer failed")
     }

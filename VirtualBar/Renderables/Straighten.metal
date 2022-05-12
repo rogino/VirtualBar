@@ -65,7 +65,12 @@ kernel void straighten_left_right_delta_squared(
   float larger = left > right ? left: right;
   float denominator = larger * larger;
   
-  delta.write(numerator/denominator, pid.yx); // y is image y axis, x is i
+  float out = numerator / denominator;
+  if (isnan(out)) {
+    out = 0;
+  }
+  
+  delta.write(out, pid.yx); // y is image y axis, x is i
 }
 
 float2 distortion_correction(

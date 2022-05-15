@@ -114,7 +114,7 @@ public class ActiveAreaSelector {
   let weightedAverageTendsTo: Float = 1e-4
   
   // Areas can be += existing areas
-  let maxCenterPositionDeviation: Float = 5
+  let maxCenterPositionDeviation: Float = 20
   
   let maxNumCandidates: Int = 4
   

@@ -51,6 +51,7 @@
 		4F1336D82813E3DE004B4ECD /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
 		4F1336DA2813E47C004B4ECD /* DisplayServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DisplayServices.framework; path = ../../../../../System/Library/PrivateFrameworks/DisplayServices.framework; sourceTree = "<group>"; };
 		4F1336DE2813E4CC004B4ECD /* CoreDisplay.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreDisplay.framework; path = ../../../../../System/Library/Frameworks/CoreDisplay.framework; sourceTree = "<group>"; };
+		4F1B99A52830A31100D0CDAB /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		4F2035BB2802BC8100F89CAE /* ImageMean.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ImageMean.metal; sourceTree = "<group>"; };
 		4F2035BC2802BC8100F89CAE /* FingerPointsRenderer.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = FingerPointsRenderer.metal; sourceTree = "<group>"; };
 		4F2035BD2802BC8100F89CAE /* Renderable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Renderable.swift; sourceTree = "<group>"; };
@@ -161,6 +162,7 @@
 			children = (
 				4FA7E4BC2802C182005AC971 /* ContentView.swift */,
 				4FCB20BA2802BBAB003DC9BC /* MetalView.swift */,
+				4F1B99A52830A31100D0CDAB /* README.md */,
 				4FB88225280C1ECE009ADABB /* ControlsView.swift */,
 			);
 			path = SwiftUI;

@@ -22,9 +22,9 @@ struct GestureState {
 //  let startThreshold: Int = 4
 //  let stopThreshold: Int = 3
   
-  let historySize: Int = 3
-  let startThreshold: Int = 2
-  let stopThreshold: Int = 2
+  let historySize: Int = 4
+  let startThreshold: Int = 3
+  let stopThreshold: Int = 3
   
   var startPosition: Float? = nil
   var history: [GestureType] = []

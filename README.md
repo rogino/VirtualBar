@@ -7,9 +7,7 @@ Inspired by [Anish Athalye's MacBook touchscreen](https://www.anishathalye.com/2
 Using a mirror, the webcam sees the keyboard and uses this to detect two and three finger gestures
 on the not-a-Touch Bar area above the keyboard to control system volume and brightness.
 
-![two finger gesture](./img/two_finger_right)
-
-![three finger gesture](./img/three_finger_left)
+![three finger gesture gif](./img/three_finger.gif)
 
 Brightness control is achieved using [nriley/brightness](https://github.com/nriley/brightness)
 

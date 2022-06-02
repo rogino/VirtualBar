@@ -24,6 +24,8 @@ minor tweaking, and possibly on the 2021 MacBook Pros with some more tweaking.
 
 Requires macOS Big Sur or later. Tested on an M1 Mac, so it might be very slow Intel ones.
 
+If you want to run this and don't have a MBA, go to `MetalView.swift`, set `useLiveCamera` to false and set `videoPath` to the absolute path to the example video file, `footage/virtualbar_example_footage.mov`, found in the repo.
+
 ## Code
 
 - `MetalView` is responsible for setting up the camera. It outputs 720p video at 30 fps. If the

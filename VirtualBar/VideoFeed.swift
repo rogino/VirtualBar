@@ -9,8 +9,7 @@ import AVFoundation
 import MetalKit
 
 class VideoFeed {
-//  let videoPath: URL = URL.init(fileURLWithPath: "/Users/rioog/Documents/MetalTutorial/virtualbar/hand_gesture_data/Movie on 21-04-22 at 18.32.mov")
-  var videoPath: URL = URL.init(fileURLWithPath: "/Users/rioog/Documents/MetalTutorial/virtualbar/hand_gesture_data/Movie on 22-04-22 at 12.01.mov")
+  var videoPath: URL
   let slowDown: Double
   
   let frameRate: Int32 = 30
@@ -20,20 +19,16 @@ class VideoFeed {
   let generator: AVAssetImageGenerator
   let textureLoader: MTKTextureLoader
   
-  var frameRange: ClosedRange<Double>? = (8.0)...(20.0)
+  /// Time range from video to use in seconds
+  var frameRange: ClosedRange<Double>?
   
   var timer: Timer? = nil
   let renderer: Renderer
   
-  init(renderer: Renderer, videoPath: String? = nil, frameRange: ClosedRange<Double>? = nil, slowDown: Double = 1.0) {
+  init(renderer: Renderer, videoPath: String, frameRange: ClosedRange<Double>? = nil, slowDown: Double = 1.0) {
     // https://stackoverflow.com/questions/42665271/swift-get-all-frames-from-video
-    if videoPath != nil {
-      self.videoPath = URL.init(fileURLWithPath: videoPath!)
-      self.frameRange = nil
-    }
-    if frameRange != nil {
-      self.frameRange = frameRange!
-    }
+    self.videoPath = URL.init(fileURLWithPath: videoPath)
+    self.frameRange = nil
     self.slowDown = slowDown
     asset = AVAsset(url: self.videoPath)
     duration = CMTimeGetSeconds(asset.duration)

@@ -372,6 +372,7 @@ public class Straighten {
         fatalError()
       }
     }
+//    transform = createRotationMatrix(angle: 1.5 * Float.pi / 180, aspectRatio: Float(image.width) / Float(image.height))
     let sEnd = CFAbsoluteTimeGetCurrent()
     timeStraightenAngle += sEnd - sStart
     commandBuffer.pushDebugGroup("Straighten image transform")
